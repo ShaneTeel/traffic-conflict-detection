@@ -1,4 +1,4 @@
-# Lane-Line Detection
+# Traffic-Conflict Detection
 
 A classical approach to lane line detection featuring:
 - Manual Kalman-filtering

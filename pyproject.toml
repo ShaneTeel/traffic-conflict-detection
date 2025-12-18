@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lane_detection"
+name = "conflict_detection"
 version = "0.1.0"
-description = "Classic lane line detection system using traditional CV models and Kalman filtering"
+description = "Computer Vision system coupled with GIS analysis for identifying, cataloguing, and evaluating traffic conflict events."
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
@@ -22,14 +22,19 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-    "numpy>=2.2.6",
-    "opencv-python>=4.10.0",
-    "setuptools==80.9.0",
-    "pydantic==2.12.5"
+    "torch>=2.0.0",
+    "ultralytics>=8.0.0",
+    "opencv-python>=4.8.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "geopandas>=0.14.0",
+    "streamlit>=1.28.0",
+    "folium>=0.15.0",
+    "plotly>=5.17.0"
 ]
 
 [project.urls]
-Homepage = "https://github.com/ShaneTeel/lane-detection-classic"
+Homepage = "https://github.com/ShaneTeel/traffic-conflict-detection"
 
 [tool.setuptools.packages.find]
 where = ["."]
