@@ -22,7 +22,6 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-    "torch>=2.0.0",
     "ultralytics>=8.0.0",
     "opencv-python>=4.8.0",
     "numpy>=1.24.0",
@@ -30,7 +29,8 @@ dependencies = [
     "geopandas>=0.14.0",
     "streamlit>=1.28.0",
     "folium>=0.15.0",
-    "plotly>=5.17.0"
+    "plotly>=5.17.0",
+    "supervision==0.27.0"
 ]
 
 [project.urls]

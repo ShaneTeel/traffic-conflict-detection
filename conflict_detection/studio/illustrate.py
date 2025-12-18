@@ -1,7 +1,7 @@
     
 import cv2
 import numpy as np
-from lane_detection.utils import get_logger
+from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -13,40 +13,16 @@ class Illustrator:
         self.stroke_color = self._hex_to_bgr(stroke_color)
         self.fill_color = self._hex_to_bgr(fill_color)
     
-    def gen_composite(self, frame, lines, stroke:bool=True, fill:bool=True):
-        if not stroke and not fill:
-            raise ValueError("ERROR: One of `stroke` or `fill` must be `True`. Both cannot be `False`.")
-        canvas = np.zeros_like(frame)
-        valid_lines = []
-        for line in lines:
-            if line.size != 0:
-                valid_lines.append(line)
-            if len(valid_lines) == 0:
-                logger.warning("No lines found, skipping")
-                return cv2.addWeighted(frame, 0.8, canvas, 0.5, 0.0)
-        if stroke:
-            for line in valid_lines:
-                self._draw_lines(canvas, [line])
-        if fill:
-            if len(valid_lines) != 2:
-                logger.warning("Left or right lane lines not found, skipping fill")
-                return cv2.addWeighted(frame, 0.8, canvas, 0.5, 0.0)
-            self._draw_fill(valid_lines, canvas)
-        return cv2.addWeighted(frame, 0.8, canvas, 0.5, 0.0)
-
-    def _draw_lines(self, img, line):
-        if line is None:
-            logger.warning("No lines, skipping.")
-            return
+    def draw_boxes(self, frame:np.ndarray, pt1:tuple, pt2:tuple, class_name:str, conf:float, track_id:int):
+        frame = self._channel_checker(frame)
+        cv2.rectangle(img=frame, pt1=pt1, pt2=pt2, color=self.stroke_color, thickness=2, lineType=cv2.LINE_AA)
+        if track_id is not None:
+            label = f"Class:{class_name}, Confidence: {conf:.2f}, Track: {track_id}"
         else:
-            cv2.polylines(img, line, isClosed=False, color=self.stroke_color, thickness=3, lineType=cv2.LINE_AA)
-
-    def _draw_fill(self, lines, frame):
-        if len(lines[0]) != len(lines[1]):
-            return 
-        poly = np.concatenate(lines, dtype=np.int32).reshape(1, -1, 2)
-        cv2.fillPoly(img=frame, pts=poly, color=self.fill_color)
-
+            label = f"Class:{class_name}, Confidence: {conf:.2f}, Track: None"
+        cv2.putText(img=frame, text=label, org=(pt1[0], pt1[1]-10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=self.stroke_color, thickness=2, lineType=cv2.LINE_AA)
+        return frame
+    
     def _draw_banner_text(self, frame, text):
         frame = self._channel_checker(frame)
         h, w = frame.shape[:2]

@@ -1,84 +1,25 @@
 # Traffic-Conflict Detection
 
-A classical approach to lane line detection featuring:
-- Manual Kalman-filtering
-- RANSAC/OLS Polynomial Regression
-- Homography-calculation and projection
-- Interactive app via streamlit (see link below)
-
-## Table-of-Contents
-- [Demo / Examples](#demo--examples)
-- [Key Features](#key-features)
-- [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
-- [Methodology](#methodlogy)
-- [Trade-Offs](#trade-offs)
-- [Classical vs. Deep Learning](#classical-vs-deep-learning)
-- [To-Do](#to-do)
-
-## Demo / Examples
-### Curved Road Example w/ Results
-**Visual Output**
-
-![Curved Example](media/out/readme/curved-edge-direct-demo.gif)
-
-**Performance Evaluation**
-
-
-```html
-Regression
-|--------------------------------------------|
-| Metric   |   Left    |   Right  |   Avg.   |
-|--------------------------------------------|
-| R2       |  0.9806   |  0.9859  |  0.9832  |
-| RMSE     |  10.1696  |  8.5702  |  9.3699  |
-| MAE      |  8.4617   |  7.0495  |  7.7556  |
-|--------------------------------------------|
-```
-
-See full video here: [Curved Road Lane Line Detection w/ Edge Map](https://youtu.be/AOmAQo3oTFU)
-
-### Streamlit App
-[Launch Demo](https://classic-lane-line-detection.streamlit.app)
-
-For more details on using the app, see the app branch's [README.md](https://github.com/ShaneTeel/lane-detection-classic/tree/app)
-
-[Return to TOC](#table-of-contents)
-
-## Key Features
-### From-Scratch Implementation
-- Kalman filter with adapative measurements for noise
-- RANSAC with dynamic iteration calculation
-- Homography via Direct Linear Transformation
-    - No camera calibration or parameters required
-
-### Production Engineering
-- Modular architecture with interchangeable steps
-- Pydantic paramter configuration validation
-- Comprehensive logging
-- Grid search hyperparamter optimization
-
-### Flexible Pipeline
-- Customizable approaches (edge/thresh, direct/hough, ols/ransac)
-- Optional bird's eye view projection of extracted features
-- Real-time video processing with temporal smoothing
-
-### Performance
-- **R2 Score**: 0.94-0.99, configuration dependent
-- **Tested on**:
-    - Straight roads
-    - Curved roads
-    - Worn lane lines
-    - Variable lighting
-
-[Return to TOC](#table-of-contents)
-
 ## Quick Start
 ### Install Package
 ```bash
-git clone https://github.com/ShaneTeel/lane-detection-classic.git
-cd lane-detection-classic
+git clone https://github.com/ShaneTeel/traffic-conflict-detection.git
 
+cd traffic-conflict-detection
+```
+
+**For CPU-only**
+```bash
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+```
+
+**For project dependencies**
+```bash
+python -m pip install -r requirements.txt
+```
+
+**For developer mode**
+```bash
 python -m pip install -e .
 ```
 

@@ -1,5 +1,5 @@
 import cv2
-from lane_detection.utils import get_logger
+from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
 
