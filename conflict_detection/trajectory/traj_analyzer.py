@@ -11,7 +11,7 @@ class TrajAnalyzer:
             Each dict has: bbox, timestamp, frame_idx, class_name, conf
         """
         self.track_id = track_id
-        self.positions = 
+        self.positions = positions
         
 
     def calculate_speed(self):
