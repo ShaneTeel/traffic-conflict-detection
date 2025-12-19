@@ -20,14 +20,13 @@ def main(file_in:str, file_out:str):
     detector = TargetDetector()
     tracker = TargetTracker(fps=fps)
     collector = TrajCollector(fps=fps, use_wall_time=False)
-    analyzer = TrajAnalyzer()
 
     studio.create_writer(file_out, fourcc="mp4v")
 
     logger.info("Starting video processing.")
 
     frames_count = 0
-    while True:
+    for _ in range(5):
         ret, frame = studio.return_frame()
         if not ret:
             break
@@ -53,6 +52,20 @@ def main(file_in:str, file_out:str):
         flag = studio.control_playback()
         if flag:
             break
+
+    all_data = collector.get_all_traj_data()
+    for track_id, tracks in list(all_data.items())[:5]:
+        traj = TrajAnalyzer(track_id, tracks)
+        total_length = traj.calculate_path_length()
+        avg_speed = traj.calculate_avg_speed()
+        instant_speed = traj.calculate_instant_speed(0.05)
+        instant_pos = traj.calculate_instant_position(0.05)
+
+        logger.info(f"Track {track_id}")
+        logger.info(f"\tPath Length: {total_length:.2f} pixels")
+        logger.info(f"\tAvg. Speed: {avg_speed:.2f} px/s")
+        logger.info(f"\tInstant Pos: {instant_pos}.")
+        logger.info(f"\tInstant Speed: {instant_speed:.2f} px/s")
     
     studio.release_resources()
 
