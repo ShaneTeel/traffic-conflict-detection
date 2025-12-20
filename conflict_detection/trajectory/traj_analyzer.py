@@ -33,7 +33,7 @@ class TrajAnalyzer:
                 logger.warning(f"Track {self.track_id}: Need 2+ positions to compute path length.")
                 return self._speed_cache
             
-            self._speed_cache = self._compute_speed()
+            self._speed_cache = self._compute_avg_speed()
         return self._speed_cache
     
     def calculate_instant_position(self, time):
@@ -47,14 +47,14 @@ class TrajAnalyzer:
         else:
             return self._instant_positions.get(time)
 
-    def calculate_instant_speed(self, time):
+    def calculate_segment_speed(self, time):
         '''Get tracked object's speed for a given time (cached operation).'''
         if time not in self._instant_speeds:
             if not self._sufficient_data():
                 logger.warning(f"Track {self.track_id}: Need 2+ positions to compute instant speed.")
                 return None
             else:
-                return self._compute_instant_speed(time)
+                return self._compute_segment_speed(time)
         else:
             return self._instant_speeds[time]
 
@@ -80,7 +80,7 @@ class TrajAnalyzer:
         classes = self._get_value("class_name")
         return Counter(classes).most_common(1)[0][0]
 
-    def _compute_speed(self):
+    def _compute_avg_speed(self):
         '''compute speed where speed is a function of a tracked objects total distance 
         traveled divided by the total amount of time the tracked object persists across the
         camera's field of view.'''
@@ -97,7 +97,7 @@ class TrajAnalyzer:
         distances = np.linalg.norm(deltas, axis=1)
         return float(distances.sum())
     
-    def _compute_instant_speed(self, time):
+    def _compute_segment_speed(self, time):
         '''
         computes instant speed given a specific time
         '''       
@@ -107,17 +107,21 @@ class TrajAnalyzer:
             logger.warning(f"Track {self.track_id}: Time argument is out-of-bounds. Must be between {timestamps[0]} and {timestamps[-1]}")
             return None
     
+        # Index info
         idx = np.searchsorted(timestamps, time)
 
         # Space info
-        travel_range = np.array(self._get_value("center"))[[idx-1, idx+1]]
+        travel_range = np.array(self._get_value("center"))[[idx-1, idx]]
         travel_dist = self._compute_path_length(travel_range)
         
         # Time info
-        ts1, ts2 = timestamps[[idx-1, idx+1]]
+        ts1, ts2 = timestamps[[idx-1, idx]]
         time_delta = ts2 - ts1
 
         # Computation / Cache assignment
+        if time_delta == 0:
+            return 0.0
+        
         speed = abs(travel_dist / time_delta)
         self._instant_speeds[time] = speed
         
@@ -136,8 +140,10 @@ class TrajAnalyzer:
         centers = np.array(self._get_value("center"))
 
         if time in timestamps:
-            return centers[timestamps == time]
-
+            idx = np.where(timestamps == time)[0][0]
+            center = centers[idx]
+            return (center[0].item(), center[1].item())
+        
         idx = np.searchsorted(timestamps, time)
         ts1, ts2 = timestamps[[idx - 1, idx]]
         time_range = ts2 - ts1
