@@ -56,16 +56,11 @@ def main(file_in:str, file_out:str):
     all_data = collector.get_all_traj_data()
     for track_id, tracks in list(all_data.items())[:5]:
         traj = TrajAnalyzer(track_id, tracks)
-        total_length = traj.calculate_path_length()
-        avg_speed = traj.calculate_avg_speed()
-        instant_speed = traj.calculate_instant_speed(0.05)
-        instant_pos = traj.calculate_instant_position(0.05)
+        centers = traj._get_value("center")
+        x = centers[:, 0]
+        y = centers[:, 1]
+        
 
-        logger.info(f"Track {track_id}")
-        logger.info(f"\tPath Length: {total_length:.2f} pixels")
-        logger.info(f"\tAvg. Speed: {avg_speed:.2f} px/s")
-        logger.info(f"\tInstant Pos: {instant_pos}.")
-        logger.info(f"\tInstant Speed: {instant_speed:.2f} px/s")
     
     studio.release_resources()
 

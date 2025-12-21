@@ -89,7 +89,8 @@ class TrajAnalyzer:
         if total_time == 0:
             logger.warning(f"Track {self.track_id}: Zero time elapsed, cannot compute speed.")
             return None
-        return abs(self.calculate_path_length() / total_time)
+        
+        return self.calculate_path_length() / total_time
 
     def _compute_path_length(self, positions):
         '''compute total euclidean distance traveled in pixels'''
@@ -120,9 +121,10 @@ class TrajAnalyzer:
 
         # Computation / Cache assignment
         if time_delta == 0:
+            self._instant_speeds[time] = 0.0
             return 0.0
         
-        speed = abs(travel_dist / time_delta)
+        speed = travel_dist / time_delta
         self._instant_speeds[time] = speed
         
         return speed
@@ -172,7 +174,7 @@ class TrajAnalyzer:
         sorted_pos = sorted(positions, key=lambda p: p['timestamp'])
 
         # Dedupe by frame_idx        
-        deduped = list({d["frame_idx"]: d for d in sorted_pos}.values())[::-1]
+        deduped = list({d["frame_idx"]: d for d in sorted_pos}.values())
         
         if len(deduped) == 0:
             return []

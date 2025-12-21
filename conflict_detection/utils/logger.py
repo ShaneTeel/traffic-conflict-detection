@@ -50,7 +50,7 @@ def setup_logging(log_level=logging.INFO,
         log_path = Path(log_dir)
         log_path.mkdir(exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_file = log_path / f"lane_detection_{timestamp}.log"
+        log_file = log_path / f"conflict_detection_{timestamp}.log"
 
         file_handler = logging.FileHandler(log_file, mode="w")
         file_handler.setLevel(logging.DEBUG)

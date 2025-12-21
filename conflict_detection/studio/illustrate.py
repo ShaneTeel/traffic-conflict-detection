@@ -1,6 +1,7 @@
     
 import cv2
 import numpy as np
+
 from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
