@@ -88,3 +88,9 @@ class Reader():
                 self.name = 'camera_' + str(self.source)
             
             logger.info(f"Successfully opened camera: {self.source} ({self.width}x{self.height}, {self.fps:.1f} FPS)")
+
+    def set_frame_idx(self, idx:int):
+        if self.cap is not None:
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+        else:
+            return

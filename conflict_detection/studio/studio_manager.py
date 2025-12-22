@@ -76,3 +76,6 @@ class StudioManager():
 
     def release_resources(self):
         self.clean._clean_up()
+
+    def set_frame_idx(self, idx:int):
+        self.source.set_frame_idx(idx)

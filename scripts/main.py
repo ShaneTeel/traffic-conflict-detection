@@ -1,4 +1,6 @@
 import cv2
+import matplotlib.pyplot as plt
+
 from conflict_detection.studio import StudioManager
 from conflict_detection.target_dev import TargetDetector, TargetTracker
 from conflict_detection.trajectory import TrajCollector, TrajAnalyzer
@@ -26,7 +28,7 @@ def main(file_in:str, file_out:str):
     logger.info("Starting video processing.")
 
     frames_count = 0
-    for _ in range(5):
+    while frames_count < (studio.source.frame_count // 2):
         ret, frame = studio.return_frame()
         if not ret:
             break
@@ -39,48 +41,59 @@ def main(file_in:str, file_out:str):
         tracks = tracker.track(results)
         collector.collect(tracks)
 
-        if len(tracks) != 0:
-            for track in tracks:
-                x1, y1, x2, y2 = map(int, track["bbox"])
-                class_name = track["class_name"]
-                conf = track["conf"]
-                track_id = track["track_id"]
-                frame = studio.draw_boxes(frame, (x1, y1), (x2, y2), class_name, conf, track_id)
+        # if len(tracks) != 0:
+        #     for track in tracks:
+        #         x1, y1, x2, y2 = map(int, track["bbox"])
+        #         class_name = track["class_name"]
+        #         conf = track["conf"]
+        #         track_id = track["track_id"]
+        #         frame = studio.draw_boxes(frame, (x1, y1), (x2, y2), class_name, conf, track_id)
 
-        studio.write_frame(frame)
+        # studio.write_frame(frame)
         
-        flag = studio.control_playback()
-        if flag:
-            break
+        # flag = studio.control_playback()
+        # if flag:
+        #     break
+
+
+    studio.set_frame_idx(0)
+    ret, frame = studio.return_frame()
+    plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
     all_data = collector.get_all_traj_data()
-    for track_id, tracks in list(all_data.items())[:5]:
-        traj = TrajAnalyzer(track_id, tracks)
-        centers = traj._get_value("center")
+    for track_id, track_data in all_data.items():
+        traj = TrajAnalyzer(track_id, track_data)
+        centers = traj.get_centers()
         x = centers[:, 0]
         y = centers[:, 1]
-        
 
+        plt.plot(x, y, linewidth=2, label=f"Track {traj.track_id}")
     
+    plt.legend()
+    plt.title("Vic Trajectories")
+    plt.show()
+        
     studio.release_resources()
 
     logger.info(f"Finished processing {frames_count} frames.")
     logger.info(f"Output saved to: {file_out}")
     logger.info(f"Collected {len(collector)} unique tracks.")
 
-    if path_checker(file_out):
-        logger.info("Playing back processed video...")
-        studio2 = StudioManager(file_out)
-        studio2.print_menu()
+    # if path_checker(file_out):
+    #     logger.info("Playing back processed video...")
+    #     studio2 = StudioManager(file_out)
+    #     studio2.print_menu()
 
-        while True:
-            ret, frame = studio2.return_frame()
-            if not ret:
-                break
-            cv2.imshow("Test", frame)
-            flag = studio2.control_playback()
-            if flag:
-                break
+    #     while True:
+    #         ret, frame = studio2.return_frame()
+    #         if not ret:
+    #             break
+    #         cv2.imshow("Test", frame)
+    #         flag = studio2.control_playback()
+    #         if flag:
+    #             break
+    # else:
+    #     logger.warning("Cannot find video file assocaited with file_out.")
 
 if __name__ == "__main__":
     file_in = "./media/in/waco-traffic-circle.mp4"

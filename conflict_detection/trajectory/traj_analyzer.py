@@ -21,8 +21,9 @@ class TrajAnalyzer:
 
         self._speed_cache = None
         self._path_length_cache = None
-        self._instant_speeds = {}
+        self._segment_speeds = {}
         self._instant_positions = {}
+        self._instant_velocity = {}
         
         logger.debug(f"Initialized trajectory analyzer for Track {self.track_id}.")
 
@@ -49,14 +50,25 @@ class TrajAnalyzer:
 
     def calculate_segment_speed(self, time):
         '''Get tracked object's speed for a given time (cached operation).'''
-        if time not in self._instant_speeds:
+        if time not in self._segment_speeds:
             if not self._sufficient_data():
                 logger.warning(f"Track {self.track_id}: Need 2+ positions to compute instant speed.")
                 return None
             else:
                 return self._compute_segment_speed(time)
         else:
-            return self._instant_speeds[time]
+            return self._segment_speeds[time]
+    
+    def calculate_instant_velocity(self, time):
+        '''Get tracked object's speed for a given time (cached operation).'''
+        if time not in self._instant_velocity:
+            if not self._sufficient_data():
+                logger.warning(f"Track {self.track_id}: Need 2+ positions to compute instant speed.")
+                return None
+            else:
+                return self._compute_instant_velocity(time)
+        else:
+            return self._instant_velocity[time]
 
     def calculate_path_length(self):
         '''Get total path length of a tracked object (cached operation).'''        
@@ -65,12 +77,9 @@ class TrajAnalyzer:
                 logger.warning(f"Track {self.track_id}: Need 2+ positions to compute path length.")
                 return self._path_length_cache
             
-            centers = np.array(self._get_value("center"))
+            centers = self.get_centers()
             self._path_length_cache = self._compute_path_length(centers)
         return self._path_length_cache
-    
-    def export_to_dict(self):
-        pass
 
     def get_stable_class(self):
         '''Return most common class across trajectory'''
@@ -79,6 +88,9 @@ class TrajAnalyzer:
         
         classes = self._get_value("class_name")
         return Counter(classes).most_common(1)[0][0]
+
+    def get_centers(self):
+        return np.array(self._get_value("center"))
 
     def _compute_avg_speed(self):
         '''compute speed where speed is a function of a tracked objects total distance 
@@ -102,10 +114,8 @@ class TrajAnalyzer:
         '''
         computes instant speed given a specific time
         '''       
-        timestamps = np.array(self._get_value("timestamp"))
-        
-        if time < timestamps.min() or time > timestamps.max():
-            logger.warning(f"Track {self.track_id}: Time argument is out-of-bounds. Must be between {timestamps[0]} and {timestamps[-1]}")
+        timestamps = self._validate_time_arg(time)
+        if timestamps is None:
             return None
     
         # Index info
@@ -121,11 +131,11 @@ class TrajAnalyzer:
 
         # Computation / Cache assignment
         if time_delta == 0:
-            self._instant_speeds[time] = 0.0
+            self._segment_speeds[time] = 0.0
             return 0.0
         
         speed = travel_dist / time_delta
-        self._instant_speeds[time] = speed
+        self._segment_speeds[time] = speed
         
         return speed
 
@@ -133,13 +143,11 @@ class TrajAnalyzer:
         '''
         computes instant position given a specific time
         '''       
-        timestamps = np.array(self._get_value("timestamp"))
-        
-        if time < timestamps.min() or time > timestamps.max():
-            logger.warning(f"Track {self.track_id}: Time argument is out-of-bounds. Must be between {timestamps[0]} and {timestamps[-1]}")
+        timestamps = self._validate_time_arg(time)
+        if timestamps is None:
             return None
         
-        centers = np.array(self._get_value("center"))
+        centers = self.get_centers()
 
         if time in timestamps:
             idx = np.where(timestamps == time)[0][0]
@@ -160,6 +168,36 @@ class TrajAnalyzer:
         
         self._instant_positions[time] = pos
         return pos
+    
+    def _compute_instant_velocity(self, time):
+        '''
+        Calculate velocity vector at given time
+        '''
+        timestamps = self._validate_time_arg(time)
+        
+        if timestamps is None:
+            return None
+        
+        idx = np.searchsorted(timestamps, time)
+        ts1, ts2 = timestamps[[idx - 1, idx]]
+
+        centers = self.get_centers()
+        x1, y1 = centers[idx - 1]
+        x2, y2 = centers[idx]
+        
+        delta = ts2 - ts1
+        if delta == 0:
+            self._instant_velocity[time] = (0, 0)
+            return (0, 0)
+
+        vx = (x2 - x1) / delta
+        vy = (y2 - y1) / delta
+        
+        velocity = (vx.item(), vy.item())
+        self._instant_velocity[time] = velocity
+
+        return velocity
+        
 
     def _initialize_positions(self, positions:List[dict]):
         '''
@@ -171,7 +209,7 @@ class TrajAnalyzer:
             logger.warning(f"Track {self.track_id} contains no positions.")
 
         # Sort by timestamp
-        sorted_pos = sorted(positions, key=lambda p: p['timestamp'])
+        sorted_pos = sorted(positions, key=lambda p: p["timestamp"])
 
         # Dedupe by frame_idx        
         deduped = list({d["frame_idx"]: d for d in sorted_pos}.values())
@@ -197,6 +235,16 @@ class TrajAnalyzer:
             })
 
         return processed
+    
+    def _validate_time_arg(self, time):
+        timestamps = np.array(self._get_value("timestamp"))
+        
+        if time < timestamps.min() or time > timestamps.max():
+            logger.warning(f"Track {self.track_id}: Time argument is out-of-bounds. Must be between {timestamps[0]} and {timestamps[-1]}")
+            return None
+        
+        else:
+            return timestamps
     
     def _sufficient_data(self):
         '''Utility function to check if trajectory has sufficient data points to perform operations'''
