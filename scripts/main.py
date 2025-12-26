@@ -55,6 +55,12 @@ def main(file_in:str, file_out:str):
         # if flag:
         #     break
 
+    analyzers = []
+    all_track_data = collector.get_all_traj_data().items()
+    for track_id, track_data in all_track_data:
+        analyzers.append(TrajAnalyzer(track_id, track_data))
+
+    
 
     studio.set_frame_idx(0)
     ret, frame = studio.return_frame()
