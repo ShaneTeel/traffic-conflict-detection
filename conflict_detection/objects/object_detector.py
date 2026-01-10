@@ -5,7 +5,7 @@ from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
 
-class TargetDetector:
+class ObjectDetector:
 
     def __init__(self, model_path:str="yolov8n.pt", confidence:float=0.5):
 

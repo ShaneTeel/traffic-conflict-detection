@@ -1,11 +1,12 @@
 # Type hints
-from typing import Union
+from typing import Union, List
 from numpy.typing import NDArray
 
 # Sub-package imports
 from .read import Reader
 from .write import Writer
 from .illustrate import Illustrator
+from .render import Render
 from .custodian import Custodian
 from .control import Controller
 
@@ -21,6 +22,7 @@ class StudioManager():
         self.source = Reader(source)
         self.write = Writer(self.source)
         self.draw = Illustrator(stroke_color=(0, 0, 255))
+        self.render = Render()
         self.playback = Controller(self.source)
         self.clean = Custodian(self.source, self.write)
         self.exit = False
@@ -71,11 +73,24 @@ class StudioManager():
     def control_playback(self):
         return self.playback.playback_controls()
     
-    def draw_boxes(self, frame, pt1:tuple, pt2:tuple, class_name:str, conf:float, track_id:int):
-        return self.draw.draw_boxes(frame, pt1, pt2, class_name, conf, track_id)
+    def draw_tracked_objects(self, frame:NDArray, tracks:List[dict]):
+        if len(tracks) != 0:
+            for track in tracks:
+                x1, y1, x2, y2 = map(int, track["bbox"])
+                class_name = track["class_name"]
+                conf = track["conf"]
+                track_id = track["track_id"]
+                frame = self.draw.draw_boxes(frame, (x1, y1), (x2, y2), class_name, conf, track_id)
 
-    def release_resources(self):
+    def release_all_resources(self):
         self.clean._clean_up()
+
+    def release_writer(self):
+        self.write.writer.release()
 
     def set_frame_idx(self, idx:int):
         self.source.set_frame_idx(idx)
+
+    def draw_src_pts(self, frame:NDArray, coords:List[tuple]):
+        for (x, y) in coords:
+            self.draw.draw_circles(frame, (x, y))

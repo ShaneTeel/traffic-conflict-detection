@@ -4,7 +4,7 @@ from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
 
-class TargetTracker:
+class ObjectTracker:
 
     def __init__(self, activation_thresh:float=0.25, lost_buffer:int=30, fps:int=30):
         """

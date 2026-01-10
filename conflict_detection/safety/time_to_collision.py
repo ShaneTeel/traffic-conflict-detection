@@ -7,12 +7,11 @@ from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
 
-class ConflictDetector:
+class TimeToCollision:
 
-    def __init__(self, ttc_thresh:float=1.5, pet_thresh:float=1.5, min_dist:float=0.5):
+    def __init__(self, ttc_thresh:float=1.5, min_dist:float=0.5):
         
         self.ttc_thresh = ttc_thresh
-        self.pet_thresh = pet_thresh
         self.min_dist = min_dist
         self.conflict_history = {}
 
@@ -48,11 +47,11 @@ class ConflictDetector:
 
         # Check if any pos / vel of traj_A / traj_B are None; return dummy dict if True
         if pos_A is None or vel_A is None or pos_B is None or vel_B is None:
-            logger.warning("traj_A or traj_B position or velocity is None.")
+            logger.debug("traj_A or traj_B position or velocity is None.")
             return dummy
         
         if vel_A == (0, 0) and vel_B == (0, 0):
-            logger.warning("traj_A and traj_B velocity are both (0, 0). Two stationary objects have not ttc.")
+            logger.debug("traj_A and traj_B velocity are both (0, 0). Two stationary objects have not ttc.")
             return dummy
         
         # Compute traj_B's relative position / velocity to traj_A
@@ -66,7 +65,7 @@ class ConflictDetector:
 
         # Check if relative velocity is zero
         if rel_vel_sqrd == 0:
-            logger.warning("Objects are moving at same velocity (parallel). No collision.")
+            logger.debug("Objects are moving at same velocity (parallel). No collision.")
             return dummy
         
         dot_product = rel_pos_x * rel_vel_x + rel_pos_y * rel_vel_y
@@ -194,8 +193,40 @@ class ConflictDetector:
         return filtered
     
     def get_minimum_ttc(self, target_pair:tuple=None):
-        conflicts = self.get_all_conflicts()        
-        pass
+        '''Get minimum TTC for specific pair'''
+        if target_pair not in self.conflict_history:
+            logger.debug("Invalid target pair provided.")
+            raise KeyError(f"Pair {target_pair} not found. Run `analyze_all_conflicts()` first")
+        
+        time_results = self.conflict_history[target_pair]
+        
+        conflicts = {t: results for t, results in time_results.items() if results["conflict_detected"]}
+        if not conflicts:
+            logger.debug(f"Unalbe to determin minimum TTC for {target_pair} tracked object pair.")
+            return {}
+        
+        min_time = min(conflicts.keys(), key=lambda t: conflicts[t]["ttc"])
+        min_result = conflicts[min_time]
+        
+        return {
+            "min_ttc": min_result["ttc"],
+            "time_of_min": min_time,
+            "collision_point": min_result["collision_point"],
+            "min_distance": min_result["min_distance"]
+        }       
+
+    def get_all_minimum_ttc(self):
+        results = {}
+        for pair in self.conflict_history.keys():
+            min_ttc = self.get_minimum_ttc(pair)
+            if not min_ttc:
+                continue
+            
+            results[pair] = min_ttc
+
+        logger.info(f"Found minimum TTC for {len(results)} tracked object pairs.")
+
+        return results
 
     def _get_overlap_period(self, traj_A: TrajAnalyzer, traj_B: TrajAnalyzer):
 
@@ -206,7 +237,7 @@ class ConflictDetector:
         end = min(times_A.max(), times_B.max())
 
         if start > end:
-            logger.warning(f"Tracks {traj_A.track_id} and {traj_B.track_id} don't overlap in time. ")
+            logger.debug(f"Tracks {traj_A.track_id} and {traj_B.track_id} don't overlap in time. ")
             return None, None
         
         logger.info(f"Analyzing tracks {traj_A.track_id} and {traj_B.track_id} from {start:.2f} to {end:.2f}.")

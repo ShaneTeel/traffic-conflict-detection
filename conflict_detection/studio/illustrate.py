@@ -2,6 +2,8 @@
 import cv2
 import numpy as np
 
+from typing import List
+
 from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
@@ -13,7 +15,7 @@ class Illustrator:
         
         self.stroke_color = self._hex_to_bgr(stroke_color)
         self.fill_color = self._hex_to_bgr(fill_color)
-    
+
     def draw_boxes(self, frame:np.ndarray, pt1:tuple, pt2:tuple, class_name:str, conf:float, track_id:int):
         frame = self._channel_checker(frame)
         cv2.rectangle(img=frame, pt1=pt1, pt2=pt2, color=self.stroke_color, thickness=2, lineType=cv2.LINE_AA)
@@ -32,6 +34,10 @@ class Illustrator:
 
         cv2.putText(frame, text, (int(w // 2) - 80, 10 + (banner_height // 2)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
         return frame
+    
+    def draw_circles(self, frame:np.ndarray, center_pts:tuple):
+        frame = self._channel_checker(frame)
+        cv2.drawMarker(frame, center_pts, markerType=cv2.MARKER_CROSS, thickness=2, color=(0, 0, 255))
 
     def _hex_to_bgr(self, color):
         if isinstance(color, tuple) and len(color) == 3:

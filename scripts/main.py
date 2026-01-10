@@ -1,9 +1,9 @@
 import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 
+from conflict_detection.detect import DetectionSystem
 from conflict_detection.studio import StudioManager
-from conflict_detection.target_dev import TargetDetector, TargetTracker
-from conflict_detection.trajectory import TrajCollector, TrajAnalyzer
 from conflict_detection.utils import get_logger, setup_logging, path_checker
 
 logger = get_logger(__name__)
@@ -15,94 +15,39 @@ setup_logging(
     console_output=True
 )
 
-def main(file_in:str, file_out:str):
+def main(file_in:str, file_out:str, dst_pts:np.ndarray):
 
-    studio = StudioManager(file_in)
-    fps, _, _ = studio.get_metadata()
-    detector = TargetDetector()
-    tracker = TargetTracker(fps=fps)
-    collector = TrajCollector(fps=fps, use_wall_time=False)
+    system = DetectionSystem(file_in, dst_pts)
 
-    studio.create_writer(file_out, fourcc="mp4v")
+    system.monitor_traffic(file_out=file_out)
 
-    logger.info("Starting video processing.")
+    conflicts = system.detect_conflicts()
 
-    frames_count = 0
-    while frames_count < (studio.source.frame_count // 2):
-        ret, frame = studio.return_frame()
-        if not ret:
-            break
-        
-        frames_count += 1
-        if frames_count % 10 == 0:
-            logger.info(f"Processing frame {frames_count}")
+    if path_checker(file_out):
+        logger.info("Playing back processed video...")
+        studio = StudioManager(file_out)
+        studio.print_menu()
 
-        results = detector.detect(frame)
-        tracks = tracker.track(results)
-        collector.collect(tracks)
-
-        # if len(tracks) != 0:
-        #     for track in tracks:
-        #         x1, y1, x2, y2 = map(int, track["bbox"])
-        #         class_name = track["class_name"]
-        #         conf = track["conf"]
-        #         track_id = track["track_id"]
-        #         frame = studio.draw_boxes(frame, (x1, y1), (x2, y2), class_name, conf, track_id)
-
-        # studio.write_frame(frame)
-        
-        # flag = studio.control_playback()
-        # if flag:
-        #     break
-
-    analyzers = []
-    all_track_data = collector.get_all_traj_data().items()
-    for track_id, track_data in all_track_data:
-        analyzers.append(TrajAnalyzer(track_id, track_data))
-
-    
-
-    studio.set_frame_idx(0)
-    ret, frame = studio.return_frame()
-    plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-
-    all_data = collector.get_all_traj_data()
-    for track_id, track_data in all_data.items():
-        traj = TrajAnalyzer(track_id, track_data)
-        centers = traj.get_centers()
-        x = centers[:, 0]
-        y = centers[:, 1]
-
-        plt.plot(x, y, linewidth=2, label=f"Track {traj.track_id}")
-    
-    plt.legend()
-    plt.title("Vic Trajectories")
-    plt.show()
-        
-    studio.release_resources()
-
-    logger.info(f"Finished processing {frames_count} frames.")
-    logger.info(f"Output saved to: {file_out}")
-    logger.info(f"Collected {len(collector)} unique tracks.")
-
-    # if path_checker(file_out):
-    #     logger.info("Playing back processed video...")
-    #     studio2 = StudioManager(file_out)
-    #     studio2.print_menu()
-
-    #     while True:
-    #         ret, frame = studio2.return_frame()
-    #         if not ret:
-    #             break
-    #         cv2.imshow("Test", frame)
-    #         flag = studio2.control_playback()
-    #         if flag:
-    #             break
-    # else:
-    #     logger.warning("Cannot find video file assocaited with file_out.")
+        while True:
+            ret, frame = studio.return_frame()
+            if not ret:
+                break
+            cv2.imshow("Processed Video", frame)
+            flag = studio.control_playback()
+            if flag:
+                break
+    else:
+        logger.warning("Cannot find video file assocaited with file_out.")
 
 if __name__ == "__main__":
-    file_in = "./media/in/waco-traffic-circle.mp4"
-    file_out = "./media/out/waco-traffic-circle-processed.mp4"
+    # file_in = "./media/in/waco-traffic-circle.mp4"
+    # file_out = "./media/out/waco-traffic-circle-processed.mp4"
 
-    main(file_in, file_out)
+    file_in = "./media/in/US_17_N_10th_Ave_20260107.mp4"
+    file_out = "./media/out/US_17_N_10th_Ave_20260107-processed.mp4"
+    world_pts = np.array([[[33.713863, 78.899982],
+                           [33.713528, 78.899829],
+                           [33.713651, 78.899529],
+                           [33.713976, 78.899634]]])
+
+    main(file_in, file_out, world_pts)
