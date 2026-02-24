@@ -1,19 +1,16 @@
-from numpy.typing import NDArray
 from typing import List
 
 from .traj_collector import TrajCollector
 from .traj_analyzer import TrajAnalyzer
-from conflict_detection.homography import WorldProjector
 from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
 
 class TrajManager:
 
-    def __init__(self, projector:WorldProjector, fps:int=30, use_wall_time:bool = False):
+    def __init__(self, fps:int=30, use_wall_time:bool = False):
 
         self.collector = TrajCollector(fps, use_wall_time)
-        self.projector = projector
         self.analyzers = {}
 
         logger.debug(f"TrajManager successfully initialized.")
@@ -49,3 +46,12 @@ class TrajManager:
             raise KeyError(f"Error. {track_id} is not in analyzers. User must call `collect_tracks()` followed by `analyze_tracks()` first.")
         
         return self.analyzers[track_id]
+    
+    def get_trajectories(self, track_id:int=None):
+        if track_id is None:
+            return self.collector.get_all_traj_data()
+        
+        if track_id not in self.collector.get_all_track_ids():
+            raise KeyError(f"Error. {track_id} is not in analyzers. User must call `collect_tracks()` followed by `analyze_tracks()` first.")
+        
+        return self.collector.get_specific_traj_data(track_id)

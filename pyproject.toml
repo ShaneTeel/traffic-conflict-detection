@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Computer Vision system coupled with GIS analysis for identifying, cataloguing, and evaluating traffic conflict events."
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = "GPL-3.0-only"
 authors = [
     {name = "Shane Teel"}
 ]
@@ -18,19 +18,14 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "License :: OSI Approved :: MIT Licence",
     "Operating System :: OS Independent"
 ]
 dependencies = [
     "ultralytics>=8.0.0",
     "opencv-python>=4.8.0",
     "numpy>=1.24.0",
-    "pandas>=2.0.0",
-    "geopandas>=0.14.0",
-    "streamlit>=1.28.0",
-    "folium>=0.15.0",
-    "plotly>=5.17.0",
     "supervision==0.27.0",
+    "utm>=0.8.1"
 ]
 
 [project.urls]

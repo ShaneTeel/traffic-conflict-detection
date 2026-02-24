@@ -225,6 +225,7 @@ class TrajAnalyzer:
 
         processed = []
         for i, pos in enumerate(deduped):
+            
             processed.append({
                 "center": (float(cx[i]), float(cy[i])),
                 "size": (float(w[i]), float(h[i])),

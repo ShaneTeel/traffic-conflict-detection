@@ -11,11 +11,11 @@ class TrajCollector:
         self.frame_count = 0
         self.use_wall_time = use_wall_time
         if self.use_wall_time:
-            self.start_time = time.time() 
+            self.start_time = time.time()
+
         self.trajectories = {}
         
         logger.debug("Initialized TrajCollector.")
-
 
     def collect(self, tracks):
         self.frame_count += 1

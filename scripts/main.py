@@ -1,10 +1,9 @@
-import cv2
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
 from conflict_detection.detect import DetectionSystem
-from conflict_detection.studio import StudioManager
-from conflict_detection.utils import get_logger, setup_logging, path_checker
+from conflict_detection.space import MapMaker
+from conflict_detection.utils import get_logger, setup_logging
 
 logger = get_logger(__name__)
 
@@ -15,39 +14,31 @@ setup_logging(
     console_output=True
 )
 
-def main(file_in:str, file_out:str, dst_pts:np.ndarray):
+def main(file_in:str, file_out:str, model_path:str, dst_pts:np.ndarray):
+ 
+    carto = MapMaker(dst_pts)
 
-    system = DetectionSystem(file_in, dst_pts)
+    system = DetectionSystem(file_in, dst_pts, model_path=model_path)
 
-    system.monitor_traffic(file_out=file_out)
+    _ = system.monitor_traffic(file_out=file_out, view=True)
 
-    conflicts = system.detect_conflicts()
+    coords, popup = system.format_conflicts()
 
-    if path_checker(file_out):
-        logger.info("Playing back processed video...")
-        studio = StudioManager(file_out)
-        studio.print_menu()
+    carto.generate_overlay(coords, popup, "Min TTC Overlay")
 
-        while True:
-            ret, frame = studio.return_frame()
-            if not ret:
-                break
-            cv2.imshow("Processed Video", frame)
-            flag = studio.control_playback()
-            if flag:
-                break
-    else:
-        logger.warning("Cannot find video file assocaited with file_out.")
+    carto.add_layer_control()
 
+    plt.show(carto.m)
+    
 if __name__ == "__main__":
-    # file_in = "./media/in/waco-traffic-circle.mp4"
-    # file_out = "./media/out/waco-traffic-circle-processed.mp4"
-
     file_in = "./media/in/US_17_N_10th_Ave_20260107.mp4"
     file_out = "./media/out/US_17_N_10th_Ave_20260107-processed.mp4"
-    world_pts = np.array([[[33.713863, 78.899982],
-                           [33.713528, 78.899829],
-                           [33.713651, 78.899529],
-                           [33.713976, 78.899634]]])
 
-    main(file_in, file_out, world_pts)
+    model_path = "./models/yolov8m.pt"
+
+    world_pts = np.array([[[33.713875, -78.899979],
+                           [33.713980, -78.899625],
+                           [33.713667, -78.899520],
+                           [33.713529, -78.899828]]])
+
+    main(file_in, file_out, model_path, world_pts)

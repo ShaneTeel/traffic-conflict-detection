@@ -1,2 +1,2 @@
 from .logger import setup_logging, get_logger
-from .helpers import path_checker
+from .min_max_scaler import MinMaxScaler
