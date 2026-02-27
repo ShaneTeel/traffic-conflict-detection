@@ -26,16 +26,7 @@ class Illustrator:
         cv2.putText(img=frame, text=label, org=(pt1[0], pt1[1]-10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=self.stroke_color, thickness=2, lineType=cv2.LINE_AA)
         return frame
     
-    def _draw_banner_text(self, frame, text):
-        frame = self._channel_checker(frame)
-        h, w = frame.shape[:2]
-        banner_height = int(0.08 * h)
-        cv2.rectangle(frame, (0, 0), (w, banner_height), (0, 0, 0), thickness=-1, lineType=cv2.LINE_AA)
-
-        cv2.putText(frame, text, (int(w // 2) - 80, 10 + (banner_height // 2)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
-        return frame
-    
-    def draw_circles(self, frame:np.ndarray, center_pts:tuple):
+    def draw_marks(self, frame:np.ndarray, center_pts:tuple):
         frame = self._channel_checker(frame)
         cv2.drawMarker(frame, center_pts, markerType=cv2.MARKER_CROSS, thickness=2, color=(0, 0, 255))
 

@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 from conflict_detection.detect import DetectionSystem
 from conflict_detection.space import MapMaker
@@ -20,9 +19,11 @@ def main(file_in:str, file_out:str, model_path:str, dst_pts:np.ndarray):
 
     system = DetectionSystem(file_in, dst_pts, model_path=model_path)
 
-    _ = system.monitor_traffic(file_out=file_out, view=True)
+    system.monitor_traffic(file_out=file_out, view=True)
+    
+    conflicts = system.detect_conflicts()
 
-    coords, popup = system.format_conflicts()
+    coords, popup = system.transform_conflicts(conflicts)
 
     carto.generate_overlay(coords, popup, "Min TTC Overlay")
 

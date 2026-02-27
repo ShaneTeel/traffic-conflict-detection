@@ -82,6 +82,11 @@ class StudioManager():
                 track_id = track["track_id"]
                 frame = self.draw.draw_boxes(frame, (x1, y1), (x2, y2), class_name, conf, track_id)
 
+    def draw_conflicts(self, frame:NDArray, conflict:List[dict]):
+        if len(conflict) != 0:
+            xy = conflict["collision_point"]
+            frame = self.draw.draw_marks(frame, xy)
+
     def release_all_resources(self):
         self.clean._clean_up()
 
@@ -93,4 +98,4 @@ class StudioManager():
 
     def draw_src_pts(self, frame:NDArray, coords:List[tuple]):
         for (x, y) in coords:
-            self.draw.draw_circles(frame, (x, y))
+            self.draw.draw_marks(frame, (x, y))

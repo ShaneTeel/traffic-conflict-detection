@@ -104,7 +104,8 @@ class TimeToCollision:
                 "ttc": t, 
                 "collision_point": (collision_x, collision_y),
                 "min_distance": distance,
-                "conflict_detected": True                
+                "conflict_detected": True,
+                "frame_idx": traj_A.              
             }
         
         else:
@@ -212,7 +213,7 @@ class TimeToCollision:
         
         return {
             "min_ttc": min_result["ttc"],
-            "time_of_min": min_time,
+            "time_of_ttc": min_time,
             "collision_point": min_result["collision_point"],
             "min_distance": min_result["min_distance"]
         }       

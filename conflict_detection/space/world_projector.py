@@ -171,18 +171,3 @@ class WorldProjector:
                 raise ValueError(e)
             
         return pts
-
-        # points = pts[0]
-                
-        # avg_x = points[:, 0].mean()
-        # right = points[points[:, 0] > avg_x]
-        # left = points[points[:, 0] <= avg_x]
-
-        # top_left, bottom_left = left[np.argsort(left[:, 1])]
-        # top_right, bottom_right = right[np.argsort(right[:, 1])]
-
-        # return np.array([[bottom_left],
-        #                  [bottom_right],
-        #                  [top_right],
-        #                  [top_left]], 
-        #                  dtype=np.float32).reshape(1, 4, 2)

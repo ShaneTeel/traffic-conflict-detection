@@ -75,12 +75,35 @@ class DetectionSystem:
         logger.info(f"Collected {len(self.traj.collector)} unique tracks.")
 
         if view:
-            self._view_tracked_objects(file_out)
-
-        self.conflicts = self._detect_conflicts()
-        return self.conflicts 
+            self._video_player(file_out)
     
-    def _view_tracked_objects(self, file_out:str):
+    def annotate_conflicts(self, file_in:str, file_out:str, conflicts:dict[dict], view:bool=True):
+        studio = StudioManager(file_in)
+        studio.create_writer(file_out, fourcc="mp4v")
+
+        logger.info("Starting conflict annotation.")
+        frames_count = 0
+
+        while True:
+            ret, frame = studio.return_frame()
+            if not ret:
+                logger.info(f"Finished annotating {frames_count} frames.")
+                if studio.writer_check():
+                    logger.info(f"Output saved to: {file_out}")
+                    studio.release_writer()
+                break
+            
+            frames_count += 1
+
+            if frames_count:
+                if self.studio.writer_check():
+                    self.studio.draw_conflicts(frame, conflict)
+                    self.studio.write_frame(frame)
+
+        if view:
+            self._video_player(file_out)
+    
+    def _video_player(self, file_out:str):
         if os.path.exists(file_out):
             logger.info("Playing back processed video...")
             studio = StudioManager(file_out)
@@ -98,24 +121,24 @@ class DetectionSystem:
         else:
             logger.warning("Cannot find video file associated with `file_out`.")
 
-    def _detect_conflicts(self):
+    def detect_conflicts(self):
         analyzers = self.traj.analyze_tracks()
         _ = self.ttc.analyze_all_conflicts(analyzers)
         conflicts = self.ttc.get_all_minimum_ttc()
         logger.info(f"Detected {len(conflicts)} conflicts (Time-to-Collision)")
         return conflicts
-    
 
-    def format_conflicts(self):
+    def transform_conflicts(self, conflicts:dict[dict]):
         coords = []
         popups = []
-        for k, c in self.conflicts.items():
+        for k, c in conflicts.items():
             pts_arr = np.array(c["collision_point"], np.float32)
             coords.append(self.projector.project(pts_arr, "forward"))
             popup_info = f"""
 <b><u>Object Pair</b></u>: {k}<br>
 <b><u>Min. TTC</b></u>: {c["min_ttc"]}<br>
 <b><u>Min. Distance</b></u>: {c["min_distance"]}<br>
+<b><u>TTC Time</b></u>: {c["time_of_ttc"]}<br>
 """
             popups.append(popup_info)
 
