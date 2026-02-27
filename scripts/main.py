@@ -28,7 +28,7 @@ def main(file_in:str, file_out:str, model_path:str, dst_pts:np.ndarray):
 
     carto.add_layer_control()
 
-    plt.show(carto.m)
+    carto.m.show_in_browser()
     
 if __name__ == "__main__":
     file_in = "./media/in/US_17_N_10th_Ave_20260107.mp4"
@@ -36,9 +36,9 @@ if __name__ == "__main__":
 
     model_path = "./models/yolov8m.pt"
 
-    world_pts = np.array([[[33.713875, -78.899979],
-                           [33.713980, -78.899625],
-                           [33.713667, -78.899520],
-                           [33.713529, -78.899828]]])
+    world_pts = np.array([[[33.713873, -78.899988],
+                           [33.713982, -78.899616],
+                           [33.713655, -78.899524],
+                           [33.713522, -78.899829]]])
 
     main(file_in, file_out, model_path, world_pts)

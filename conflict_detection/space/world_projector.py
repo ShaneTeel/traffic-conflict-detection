@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import utm
+
 from numpy.typing import NDArray
 from typing import Literal
 
@@ -39,11 +41,11 @@ class WorldProjector:
         Homography matrix / Inverse Homography matrix are computed
         '''
         self.src_pts = self._pts_validation(src_pts)
-        self.dst_pts = self._pts_validation(dst_pts)
-        self.H = self._calc_H_mat(self.src_pts, self.dst_pts)
+        self.dst_pts_utm = self._latlon_to_utm(dst_pts)
+        self.H = self._calc_H_mat(self.src_pts, self.dst_pts_utm)
         self.H_I = np.linalg.inv(self.H)
 
-        logger.debug(f"WorldProjector initialized with \nsrc_pts = {self.src_pts} \n and \ndst_pts = {self.dst_pts}")
+        logger.debug(f"WorldProjector initialized with \nsrc_pts = {self.src_pts} \n and \ndst_pts = {self.dst_pts_utm}")
 
     def project(self, pts:NDArray, direction:Literal["forward", "backward"]="forward"):
         """
@@ -77,8 +79,9 @@ class WorldProjector:
         m = self.H if direction == "forward" else self.H_I
 
         pts = cv2.perspectiveTransform(pts, m)
-        return pts.reshape(-1, 2).astype(np.int32)
-    
+
+        return self._utm_to_latlon(pts)
+
     def _calc_H_mat(self, src_pts:NDArray, dst_pts:NDArray):
         """
         Compute homography matrix using Direct Linear Transformation (DLT).
@@ -113,6 +116,30 @@ class WorldProjector:
 
         return H / H[2, 2]
 
+    def _utm_to_latlon(self, pts:NDArray):
+
+        flat = pts.reshape(-1, 2)
+
+        lat, lon = utm.to_latlon(flat[:, 0], flat[:, 1], zone_number=self.zone_num, zone_letter=self.zone_let)
+
+        return np.array([lat, lon], dtype=np.float32).reshape(pts.shape)  
+
+    def _latlon_to_utm(self, dst_pts:NDArray):
+
+        flat = dst_pts.reshape(-1, 2)
+        utm_pts = []
+
+        for i, (lat, lon) in enumerate(flat):
+
+            e, n, zn, zl = utm.from_latlon(lat, lon)
+            if i == 0:
+                self.zone_num = zn
+                self.zone_let = zl
+            
+            utm_pts.append([e, n])
+
+        return np.array(utm_pts, dtype=np.float32).reshape(dst_pts.shape)            
+
     def _pts_validation(self, pts:NDArray):
         '''
         Description
@@ -142,18 +169,20 @@ class WorldProjector:
                 pts = pts.reshape(1, 4, 2)
             except Exception as e:
                 raise ValueError(e)
+            
+        return pts
 
-        points = pts[0]
+        # points = pts[0]
                 
-        avg_y = points[:, 1].mean()
-        bottom = points[points[:, 1] > avg_y]
-        top = points[points[:, 1] <= avg_y]
+        # avg_x = points[:, 0].mean()
+        # right = points[points[:, 0] > avg_x]
+        # left = points[points[:, 0] <= avg_x]
 
-        bottom_left, bottom_right = bottom[np.argsort(bottom[:, 0])]
-        top_left, top_right = top[np.argsort(top[:, 0])]
+        # top_left, bottom_left = left[np.argsort(left[:, 1])]
+        # top_right, bottom_right = right[np.argsort(right[:, 1])]
 
-        return np.array([[bottom_left],
-                         [bottom_right],
-                         [top_right],
-                         [top_left]], 
-                         dtype=np.float32).reshape(1, 4, 2)
+        # return np.array([[bottom_left],
+        #                  [bottom_right],
+        #                  [top_right],
+        #                  [top_left]], 
+        #                  dtype=np.float32).reshape(1, 4, 2)
