@@ -30,7 +30,7 @@ class Illustrator:
         frame = self._channel_checker(frame)
         cv2.drawMarker(frame, center_pts, markerType=cv2.MARKER_CROSS, thickness=5, color=self.conflict_color)
 
-        cv2.putText(img=frame, text=label, org=(center_pts[0], center_pts[1]-10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=self.stroke_color, thickness=2, lineType=cv2.LINE_AA)
+        cv2.putText(img=frame, text=label, org=(center_pts[0], center_pts[1]-10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(0, 0, 0), thickness=2, lineType=cv2.LINE_AA)
         return frame
 
     def _hex_to_bgr(self, color):

@@ -91,8 +91,10 @@ class StudioManager():
         self.clean._clean_up()
 
     def release_writer(self):
-        self.write.writer.release()
-
+        if self.write.writer is not None:
+            self.write.writer.release()
+            self.write.writer = None
+            
     def set_frame_idx(self, idx:int):
         self.source.set_frame_idx(idx)
 

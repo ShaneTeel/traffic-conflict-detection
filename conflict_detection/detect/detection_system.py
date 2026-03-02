@@ -120,25 +120,24 @@ class DetectionSystem:
                 break
             
             frames_count += 1
-
-            if any(frames_count == inner_dict["frame_idx"] for inner_dict in conflicts.values()):
-                frame_conflicts = {t: inner for t, inner in conflicts.items() if frames_count == inner["frame_idx"]}
-
+            frame_conflicts = {t: inner for t, inner in conflicts.items() if frames_count == inner["frame_idx"]}
+            
+            if frame_conflicts:
                 for _, c in frame_conflicts.items():
                     coords = (int(c["collision_point"][0]), int(c["collision_point"][1]))
                     label = f"TTC: {c['min_ttc']}, Min Distance: {c['min_distance']}"
-                    active_objs.append(self._OBJECT_INFO(coords, label, 20))
+                    active_objs.append(self._OBJECT_INFO(coords, label, self.fps * 5))
                 
-            if len(active_objs) > 0:
-                updated_objects = []
-                for markers in active_objs:
-                    self.temp_studio.draw_conflicts(frame, markers.coords, label=markers.label)
-                    self.temp_studio.write_frame(frame)
+            updated_objects = []
+            for markers in active_objs:
+                self.temp_studio.draw_conflicts(frame, markers.coords, label=markers.label)
 
-                    if markers.lifecycle > 1:
-                        updated_objects.append(self._OBJECT_INFO(markers.coords, markers.label, markers.lifecycle - 1))
+                if markers.lifecycle > 1:
+                    updated_objects.append(self._OBJECT_INFO(markers.coords, markers.label, markers.lifecycle - 1))
 
-                active_objs = updated_objects
+            active_objs = updated_objects
+
+            self.temp_studio.write_frame(frame)
 
     def geocode_conflicts(self):
         if self.conflicts is None:
@@ -172,6 +171,3 @@ class DetectionSystem:
                 logger.info(f"Removed {self.temp_file}")
             except Exception as e:
                 logger.error(e)
-
-    def __del__(self):
-        self._clean_up()

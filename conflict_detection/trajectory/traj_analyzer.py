@@ -167,7 +167,7 @@ class TrajAnalyzer:
         
         pos = (x.item(), y.item())
         
-        self._instant_positions[time] = [pos, frame_indices[idx]]
+        self._instant_positions[time] = (pos, frame_indices[idx])
         return pos, frame_indices[idx]
     
     def _compute_instant_velocity(self, time):
