@@ -40,7 +40,7 @@ class WorldProjector:
         src_pts / dst_pts shape, dtype, and point order validated
         Homography matrix / Inverse Homography matrix are computed
         '''
-        self.src_pts = self._pts_validation(src_pts)
+        self.src_pts = self._shape_validation(src_pts)
         self.dst_pts_utm = self._latlon_to_utm(dst_pts)
         self.H = self._calc_H_mat(self.src_pts, self.dst_pts_utm)
         self.H_I = np.linalg.inv(self.H)
@@ -140,7 +140,7 @@ class WorldProjector:
 
         return np.array(utm_pts, dtype=np.float32).reshape(dst_pts.shape)            
 
-    def _pts_validation(self, pts:NDArray):
+    def _shape_validation(self, pts:NDArray):
         '''
         Description
         -----------

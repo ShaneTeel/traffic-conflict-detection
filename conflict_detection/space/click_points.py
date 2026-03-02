@@ -48,5 +48,5 @@ class ClickPoints:
                 self.show()
 
     def get_pts(self):
-        logger
+        logger.info(f"Points selected are {self.pts}")
         return self.pts

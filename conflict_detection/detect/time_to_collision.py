@@ -38,10 +38,10 @@ class TimeToCollision:
             }
 
         # Get pos / vel for both traj objects
-        pos_A = traj_A.calculate_instant_position(time)
+        pos_A, frame_idx = traj_A.calculate_instant_position(time)
         vel_A = traj_A.calculate_instant_velocity(time)
 
-        pos_B = traj_B.calculate_instant_position(time)
+        pos_B, _ = traj_B.calculate_instant_position(time)
         vel_B = traj_B.calculate_instant_velocity(time)
 
         # Check if any pos / vel of traj_A / traj_B are None; return dummy dict if True
@@ -50,7 +50,7 @@ class TimeToCollision:
             return dummy
         
         if vel_A == (0, 0) and vel_B == (0, 0):
-            logger.debug("traj_A and traj_B velocity are both (0, 0). Two stationary objects have not ttc.")
+            logger.debug("traj_A and traj_B velocity are both (0, 0). Two stationary objects have no ttc.")
             return dummy
         
         # Compute traj_B's relative position / velocity to traj_A
@@ -105,7 +105,7 @@ class TimeToCollision:
                 "collision_point": (collision_x, collision_y),
                 "min_distance": distance,
                 "conflict_detected": True,
-                "frame_idx": traj_A.              
+                "frame_idx": frame_idx
             }
         
         else:
@@ -162,7 +162,7 @@ class TimeToCollision:
         :rtype: dict[dict]
         '''
         if len(analyzers.values()) < 2:
-            logger.warning(f"The argument passed to analyzers must contain 2+ `TrajAnalyzer()` objects to perform TTC calculation.")
+            logger.debug(f"The argument passed to analyzers must contain 2+ `TrajAnalyzer()` objects to perform TTC calculation.")
             return None
         
         analyzer_lst = list(analyzers.values())
@@ -198,14 +198,14 @@ class TimeToCollision:
     def get_minimum_ttc(self, target_pair:tuple=None):
         '''Get minimum TTC for specific pair'''
         if target_pair not in self.conflict_history:
-            logger.debug("Invalid target pair provided.")
+            logger.error("Invalid target pair provided.")
             raise KeyError(f"Pair {target_pair} not found. Run `analyze_all_conflicts()` first")
         
         time_results = self.conflict_history[target_pair]
         
         conflicts = {t: results for t, results in time_results.items() if results["conflict_detected"]}
         if not conflicts:
-            logger.debug(f"Unalbe to determin minimum TTC for {target_pair} tracked object pair.")
+            logger.debug(f"Unable to determin minimum TTC for {target_pair} tracked object pair.")
             return {}
         
         min_time = min(conflicts.keys(), key=lambda t: conflicts[t]["ttc"])
@@ -215,7 +215,8 @@ class TimeToCollision:
             "min_ttc": min_result["ttc"],
             "time_of_ttc": min_time,
             "collision_point": min_result["collision_point"],
-            "min_distance": min_result["min_distance"]
+            "min_distance": min_result["min_distance"],
+            "frame_idx": min_result["frame_idx"]
         }       
 
     def get_all_minimum_ttc(self):

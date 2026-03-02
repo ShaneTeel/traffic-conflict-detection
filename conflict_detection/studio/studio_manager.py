@@ -1,6 +1,8 @@
 # Type hints
+import cv2
 from typing import Union, List
 from numpy.typing import NDArray
+import atexit
 
 # Sub-package imports
 from .read import Reader
@@ -18,10 +20,10 @@ logger = get_logger(__name__)
 class StudioManager():
     
     def __init__(self, source:Union[str, int]):
-
+        atexit.register(self.release_all_resources)
         self.source = Reader(source)
         self.write = Writer(self.source)
-        self.draw = Illustrator(stroke_color=(0, 0, 255))
+        self.draw = Illustrator(object_color=(0, 255, 0), conflict_color=(0, 0, 255))
         self.render = Render()
         self.playback = Controller(self.source)
         self.clean = Custodian(self.source, self.write)
@@ -43,11 +45,11 @@ class StudioManager():
         else:
             return False, None
         
-    def get_metadata(self):
+    def get_fps(self):
         '''Returns fps, height, and width of media object'''
         if self.source.fps is None:
-            return 1, self.source.height, self.source.width
-        return self.source.fps, self.source.height, self.source.width
+            return 1
+        return self.source.fps
     
     def source_type(self):
         return self.source.source_type
@@ -82,10 +84,8 @@ class StudioManager():
                 track_id = track["track_id"]
                 frame = self.draw.draw_boxes(frame, (x1, y1), (x2, y2), class_name, conf, track_id)
 
-    def draw_conflicts(self, frame:NDArray, conflict:List[dict]):
-        if len(conflict) != 0:
-            xy = conflict["collision_point"]
-            frame = self.draw.draw_marks(frame, xy)
+    def draw_conflicts(self, frame:NDArray, coords:tuple, label:str):
+        frame = self.draw.draw_marks(frame, coords, label)
 
     def release_all_resources(self):
         self.clean._clean_up()
@@ -99,3 +99,17 @@ class StudioManager():
     def draw_src_pts(self, frame:NDArray, coords:List[tuple]):
         for (x, y) in coords:
             self.draw.draw_marks(frame, (x, y))
+
+    def play_video(self, title:str=None):
+        logger.info("Playing video...")
+        title = self.get_name() if title is None else title
+        self.print_menu()
+        while True:
+            ret, frame = self.return_frame()
+            if not ret:
+                break
+            
+            cv2.imshow(title, frame)
+            flag = self.control_playback()
+            if flag:
+                break

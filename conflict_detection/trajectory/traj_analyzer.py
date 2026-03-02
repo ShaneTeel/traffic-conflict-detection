@@ -42,7 +42,7 @@ class TrajAnalyzer:
         if time not in self._instant_positions.keys():
             if not self._sufficient_data():
                 logger.warning(f"Track {self.track_id}: Need 2+ positions to compute instant position.")
-                return None
+                return None, None
             else:
                 return self._compute_instant_position(time)
         else:
@@ -145,14 +145,15 @@ class TrajAnalyzer:
         '''       
         timestamps = self._validate_time_arg(time)
         if timestamps is None:
-            return None
+            return None, None
         
+        frame_indices = self._get_value("frame_idx")
         centers = self.get_centers()
 
         if time in timestamps:
             idx = np.where(timestamps == time)[0][0]
             center = centers[idx]
-            return (center[0].item(), center[1].item())
+            return (center[0].item(), center[1].item()), frame_indices[idx]
         
         idx = np.searchsorted(timestamps, time)
         ts1, ts2 = timestamps[[idx - 1, idx]]
@@ -166,8 +167,8 @@ class TrajAnalyzer:
         
         pos = (x.item(), y.item())
         
-        self._instant_positions[time] = pos
-        return pos
+        self._instant_positions[time] = [pos, frame_indices[idx]]
+        return pos, frame_indices[idx]
     
     def _compute_instant_velocity(self, time):
         '''

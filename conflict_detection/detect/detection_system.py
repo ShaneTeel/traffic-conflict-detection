@@ -1,35 +1,50 @@
 import numpy as np
 import cv2
 import os
-
-from typing import Union
-from numpy.typing import NDArray
+import tempfile
+import atexit
+import collections
 
 from conflict_detection.studio import StudioManager
 from conflict_detection.space import ClickPoints, WorldProjector
 from conflict_detection.objects import ObjectDetector, ObjectTracker
 from conflict_detection.trajectory import TrajManager
 from .time_to_collision import TimeToCollision
-from conflict_detection.utils import get_logger, MinMaxScaler
+from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
 
 class DetectionSystem:
 
-    def __init__(self, file_in:Union[str, int], world_pts:NDArray, model_path:str="./models/yolov8n.pt", model_conf:float=0.5, activation_thresh:float=0.25, lost_buffer:int=30, ttc_thresh:float=1.5, min_dist:float=0.5, use_wall_time:bool=False):
+    _OBJECT_INFO = collections.namedtuple("ObjectInfo", ["coords", "label", "lifecycle"])
 
-        self.studio = StudioManager(file_in)
-        self.fps, _, _ = self.studio.get_metadata()
+    def __init__(self, file_in:str, world_pts:np.ndarray, model_path:str="./models/yolov8n.pt", model_conf:float=0.5, activation_thresh:float=0.25, lost_buffer:int=30, ttc_thresh:float=1.5, min_dist:float=0.5, use_wall_time:bool=False):
+
+        self.temp_file = self._create_temp_file()
+        atexit.register(self._clean_up)
+
+        self.studio_in = StudioManager(file_in)
+        self.fps = self.studio_in.get_fps()
+        self.studio_in.create_writer(self.temp_file, fourcc="mp4v")
+        self.temp_studio = None
+
         self.detector = ObjectDetector(model_path=model_path, confidence=model_conf)
         self.tracker = ObjectTracker(fps=self.fps, activation_thresh=activation_thresh, lost_buffer=lost_buffer)
         self.projector = self._initialize_projector(world_pts)
         self.traj = TrajManager(self.fps, use_wall_time=False)
         self.ttc = TimeToCollision(ttc_thresh, min_dist)
+        self.conflicts = None
 
         logger.debug("Detection system initialized")
+
+    def _create_temp_file(self, suffix:str=".mp4"):
+        fd, temp_path = tempfile.mkstemp(suffix=suffix)
+        os.close(fd)
+        logger.info(f"Temp file created at {temp_path}")
+        return temp_path
         
-    def _initialize_projector(self, world_pts:NDArray):
-        _, frame = self.studio.return_frame()
+    def _initialize_projector(self, world_pts:np.ndarray):
+        _, frame = self.studio_in.return_frame()
 
         logger.info("Select four points that correspond to the four real-world points provided as the argument for `world_pts`. Press 'ESC' when complete")
 
@@ -42,22 +57,26 @@ class DetectionSystem:
 
         return WorldProjector(img_pts, world_pts)
     
-    def monitor_traffic(self, file_out:str=None, view:bool=True):
-        if file_out is not None:
-            self.studio.create_writer(file_out, fourcc="mp4v")
+    def monitor_traffic(self, file_out:str=None):
+        logger.info(f"Processing traffic cam footage.")
 
-        logger.info("Starting video processing.")
+        analyzers = self._multi_object_tracking_with_traj_collection()
+        logger.info(f"Collected {len(self.traj.collector)} unique tracks.")
 
+        self.conflicts = self._detect_conflicts(analyzers=analyzers)
+        self._annotate_conflicts(conflicts=self.conflicts, file_in=self.temp_file, file_out=file_out)
+
+    def _multi_object_tracking_with_traj_collection(self):
         frames_count = 0
-        self.studio.set_frame_idx(0)
-
+        self.studio_in.set_frame_idx(0)
+        
         while True:
-            ret, frame = self.studio.return_frame()
+            ret, frame = self.studio_in.return_frame()
             if not ret:
                 logger.info(f"Finished processing {frames_count} frames.")
-                if self.studio.writer_check():
-                    logger.info(f"Output saved to: {file_out}")
-                    self.studio.release_writer()
+                if self.studio_in.writer_check():
+                    logger.info(f"Output saved to: {self.temp_file}")
+                    self.studio_in.release_writer()
                 break
             
             frames_count += 1
@@ -68,70 +87,66 @@ class DetectionSystem:
             tracks = self.tracker.track(results)
             self.traj.collect_tracks(tracks)
 
-            if self.studio.writer_check():
-                self.studio.draw_tracked_objects(frame, tracks)
-                self.studio.write_frame(frame)
-    
-        logger.info(f"Collected {len(self.traj.collector)} unique tracks.")
+            self.studio_in.draw_tracked_objects(frame, tracks)
+            self.studio_in.write_frame(frame)
 
-        if view:
-            self._video_player(file_out)
-    
-    def annotate_conflicts(self, file_in:str, file_out:str, conflicts:dict[dict], view:bool=True):
-        studio = StudioManager(file_in)
-        studio.create_writer(file_out, fourcc="mp4v")
+        return self.traj.analyze_tracks()
 
-        logger.info("Starting conflict annotation.")
-        frames_count = 0
-
-        while True:
-            ret, frame = studio.return_frame()
-            if not ret:
-                logger.info(f"Finished annotating {frames_count} frames.")
-                if studio.writer_check():
-                    logger.info(f"Output saved to: {file_out}")
-                    studio.release_writer()
-                break
-            
-            frames_count += 1
-
-            if frames_count:
-                if self.studio.writer_check():
-                    self.studio.draw_conflicts(frame, conflict)
-                    self.studio.write_frame(frame)
-
-        if view:
-            self._video_player(file_out)
-    
-    def _video_player(self, file_out:str):
-        if os.path.exists(file_out):
-            logger.info("Playing back processed video...")
-            studio = StudioManager(file_out)
-            studio.print_menu()
-
-            while True:
-                ret, frame = studio.return_frame()
-                if not ret:
-                    break
-
-                cv2.imshow("Processed Video", frame)
-                flag = studio.control_playback()
-                if flag:
-                    break
-        else:
-            logger.warning("Cannot find video file associated with `file_out`.")
-
-    def detect_conflicts(self):
-        analyzers = self.traj.analyze_tracks()
+    def _detect_conflicts(self, analyzers:dict[dict]):
         _ = self.ttc.analyze_all_conflicts(analyzers)
         conflicts = self.ttc.get_all_minimum_ttc()
         logger.info(f"Detected {len(conflicts)} conflicts (Time-to-Collision)")
         return conflicts
+    
+    def _annotate_conflicts(self, conflicts:dict[dict], file_in:str, file_out:str):
+        if conflicts is None:
+            raise RuntimeError("Error. User must call `_detect_conflicts()` first before annotating")
 
-    def transform_conflicts(self, conflicts:dict[dict]):
+        self.temp_studio = StudioManager(file_in)
+        self.temp_studio.create_writer(file_out, fourcc="mp4v")
+
+        logger.info("Starting conflict annotation.")
+        self.temp_studio.set_frame_idx(0)
+        frames_count = 0
+        active_objs = []
+
+        while True:
+            ret, frame = self.temp_studio.return_frame()
+            if not ret:
+                logger.info(f"Finished annotating {frames_count} frames.")
+                if self.temp_studio.writer_check():
+                    logger.info(f"Output saved to: {file_out}")
+                    self.temp_studio.release_writer()
+                break
+            
+            frames_count += 1
+
+            if any(frames_count == inner_dict["frame_idx"] for inner_dict in conflicts.values()):
+                frame_conflicts = {t: inner for t, inner in conflicts.items() if frames_count == inner["frame_idx"]}
+
+                for _, c in frame_conflicts.items():
+                    coords = (int(c["collision_point"][0]), int(c["collision_point"][1]))
+                    label = f"TTC: {c['min_ttc']}, Min Distance: {c['min_distance']}"
+                    active_objs.append(self._OBJECT_INFO(coords, label, 20))
+                
+            if len(active_objs) > 0:
+                updated_objects = []
+                for markers in active_objs:
+                    self.temp_studio.draw_conflicts(frame, markers.coords, label=markers.label)
+                    self.temp_studio.write_frame(frame)
+
+                    if markers.lifecycle > 1:
+                        updated_objects.append(self._OBJECT_INFO(markers.coords, markers.label, markers.lifecycle - 1))
+
+                active_objs = updated_objects
+
+    def geocode_conflicts(self):
+        if self.conflicts is None:
+            raise RuntimeError("Error. User must call `_detect_conflicts()` first before annotating")   
+           
         coords = []
         popups = []
-        for k, c in conflicts.items():
+        for k, c in self.conflicts.items():
             pts_arr = np.array(c["collision_point"], np.float32)
             coords.append(self.projector.project(pts_arr, "forward"))
             popup_info = f"""
@@ -143,3 +158,20 @@ class DetectionSystem:
             popups.append(popup_info)
 
         return coords, popups
+    
+    def _clean_up(self):
+
+        if self.studio_in is not None:
+            self.studio_in.release_all_resources()
+        if self.temp_studio is not None:
+            self.temp_studio.release_all_resources()
+
+        if hasattr(self, "temp_file") and os.path.exists(self.temp_file):
+            try:
+                os.remove(self.temp_file)
+                logger.info(f"Removed {self.temp_file}")
+            except Exception as e:
+                logger.error(e)
+
+    def __del__(self):
+        self._clean_up()
