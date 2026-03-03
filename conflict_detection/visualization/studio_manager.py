@@ -4,15 +4,8 @@ from typing import Union, List
 from numpy.typing import NDArray
 import atexit
 
-# Sub-package imports
-from .read import Reader
-from .write import Writer
-from .illustrate import Illustrator
-from .render import Render
-from .custodian import Custodian
-from .control import Controller
-
 # Package import
+from conflict_detection.visualization.studio import *
 from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
@@ -45,6 +38,12 @@ class StudioManager():
         else:
             return False, None
         
+    def _extract_init_data(self, file_to_write:str):
+        fps = self.get_fps()
+        self.create_writer(file_to_write, fourcc="mp4v")
+        _, frame = self.return_frame()
+        return fps, frame
+
     def get_fps(self):
         '''Returns fps, height, and width of media object'''
         if self.source.fps is None:

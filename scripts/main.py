@@ -1,9 +1,8 @@
 import numpy as np
 
 from conflict_detection.detect import DetectionSystem
-from conflict_detection.space import MapMaker
-from conflict_detection.studio import StudioManager
-from conflict_detection.utils import get_logger, setup_logging
+from conflict_detection.visualization import *
+from conflict_detection.utils import *
 
 logger = get_logger(__name__)
 

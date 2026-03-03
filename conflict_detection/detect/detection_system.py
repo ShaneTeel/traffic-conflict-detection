@@ -5,8 +5,8 @@ import tempfile
 import atexit
 import collections
 
-from conflict_detection.studio import StudioManager
-from conflict_detection.space import ClickPoints, WorldProjector
+from conflict_detection.visualization import StudioManager
+from conflict_detection.geometry import *
 from conflict_detection.objects import ObjectDetector, ObjectTracker
 from conflict_detection.trajectory import TrajManager
 from .time_to_collision import TimeToCollision
@@ -24,13 +24,12 @@ class DetectionSystem:
         atexit.register(self._clean_up)
 
         self.studio_in = StudioManager(file_in)
-        self.fps = self.studio_in.get_fps()
-        self.studio_in.create_writer(self.temp_file, fourcc="mp4v")
+        self.fps, frame = self.studio_in._extract_init_data()
         self.temp_studio = None
 
         self.detector = ObjectDetector(model_path=model_path, confidence=model_conf)
         self.tracker = ObjectTracker(fps=self.fps, activation_thresh=activation_thresh, lost_buffer=lost_buffer)
-        self.projector = self._initialize_projector(world_pts)
+        self.mapper = IPM(frame, world_pts)
         self.traj = TrajManager(self.fps, use_wall_time=False)
         self.ttc = TimeToCollision(ttc_thresh, min_dist)
         self.conflicts = None
@@ -42,20 +41,6 @@ class DetectionSystem:
         os.close(fd)
         logger.info(f"Temp file created at {temp_path}")
         return temp_path
-        
-    def _initialize_projector(self, world_pts:np.ndarray):
-        _, frame = self.studio_in.return_frame()
-
-        logger.info("Select four points that correspond to the four real-world points provided as the argument for `world_pts`. Press 'ESC' when complete")
-
-        click = ClickPoints(frame, "Image Space")
-        click.draw()
-
-        img_pts = np.array(click.get_pts(), dtype=np.float32)
-
-        logger.debug(f"User selected the following img_pts = \n{img_pts}")
-
-        return WorldProjector(img_pts, world_pts)
     
     def monitor_traffic(self, file_out:str=None):
         logger.info(f"Processing traffic cam footage.")
@@ -147,7 +132,7 @@ class DetectionSystem:
         popups = []
         for k, c in self.conflicts.items():
             pts_arr = np.array(c["collision_point"], np.float32)
-            coords.append(self.projector.project(pts_arr, "forward"))
+            coords.append(self.mapper.map_persepective(pts_arr))
             popup_info = f"""
 <b><u>Object Pair</b></u>: {k}<br>
 <b><u>Min. TTC</b></u>: {c["min_ttc"]}<br>

@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import utm
 
 from numpy.typing import NDArray
 from typing import Literal
@@ -40,12 +39,12 @@ class WorldProjector:
         src_pts / dst_pts shape, dtype, and point order validated
         Homography matrix / Inverse Homography matrix are computed
         '''
-        self.src_pts = self._shape_validation(src_pts)
-        self.dst_pts_utm = self._latlon_to_utm(dst_pts)
-        self.H = self._calc_H_mat(self.src_pts, self.dst_pts_utm)
+        self.src_pts = src_pts
+        self.dst_pts = dst_pts
+        self.H = self._calc_H_mat(self.src_pts, self.dst_pts)
         self.H_I = np.linalg.inv(self.H)
 
-        logger.debug(f"WorldProjector initialized with \nsrc_pts = {self.src_pts} \n and \ndst_pts = {self.dst_pts_utm}")
+        logger.debug(f"WorldProjector initialized with \nsrc_pts = {self.src_pts} \n and \ndst_pts = {self.dst_pts}")
 
     def project(self, pts:NDArray, direction:Literal["forward", "backward"]="forward"):
         """
@@ -78,9 +77,7 @@ class WorldProjector:
         
         m = self.H if direction == "forward" else self.H_I
 
-        pts = cv2.perspectiveTransform(pts, m)
-
-        return self._utm_to_latlon(pts)
+        return cv2.perspectiveTransform(pts, m)        
 
     def _calc_H_mat(self, src_pts:NDArray, dst_pts:NDArray):
         """
@@ -115,59 +112,3 @@ class WorldProjector:
         H = np.linalg.solve(A, b).reshape(3, 3)
 
         return H / H[2, 2]
-
-    def _utm_to_latlon(self, pts:NDArray):
-
-        flat = pts.reshape(-1, 2)
-
-        lat, lon = utm.to_latlon(flat[:, 0], flat[:, 1], zone_number=self.zone_num, zone_letter=self.zone_let)
-
-        return np.array([lat, lon], dtype=np.float32).reshape(pts.shape)  
-
-    def _latlon_to_utm(self, dst_pts:NDArray):
-
-        flat = dst_pts.reshape(-1, 2)
-        utm_pts = []
-
-        for i, (lat, lon) in enumerate(flat):
-
-            e, n, zn, zl = utm.from_latlon(lat, lon)
-            if i == 0:
-                self.zone_num = zn
-                self.zone_let = zl
-            
-            utm_pts.append([e, n])
-
-        return np.array(utm_pts, dtype=np.float32).reshape(dst_pts.shape)            
-
-    def _shape_validation(self, pts:NDArray):
-        '''
-        Description
-        -----------
-        Private method called upon during object initialization to validate the shape, enforce a point order, and convert the pts dtype to `np.float32`.
-
-        The point order and shape is as follows:
-            [[
-            [Bottom Left]
-            [Bottom Right]
-            [Top Right]
-            [Top Left]
-            ]]
-
-        Parameters
-        ----------
-        pts : NDArray
-            Four points represented cooridnate pairs.
-
-        Returns
-        --------------
-        pts : NDArray
-            pts validated, reshaped, and type casted.
-        '''
-        if pts.shape != (1, 4, 2):
-            try:
-                pts = pts.reshape(1, 4, 2)
-            except Exception as e:
-                raise ValueError(e)
-            
-        return pts
