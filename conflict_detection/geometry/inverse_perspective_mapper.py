@@ -7,21 +7,28 @@ from numpy.typing import NDArray
 from .click_points import ClickPoints
 from .world_projector import WorldProjector
 
-from conflict_detection.utils import get_logger
+from conflict_detection.visualization import MapMaker
+from conflict_detection.utils import get_logger, MAE, RMSE
 
 logger = get_logger(__name__)
 
 class InversePerspectiveMapper:
     
-    def __init__(self, frame:NDArray, world_pts:NDArray, val_pts:NDArray):
+    def __init__(self, frame:NDArray, world_pts:NDArray, img_pts:NDArray=None):
 
-        self.projector = self._initialize_projector(frame, world_pts)
-        self.test_src_pts = self._request_points(frame, val_pts.shape[1], "val_pts")
-        self.test_dst_pts = self._latlon_to_utm(val_pts)
-        self.eval = self._evaluate_projector(self.test_src_pts, self.test_dst_pts)
+        self.projector = self._initialize_projector(frame, world_pts, img_pts)
+        self.map_maker = MapMaker(world_pts)
+        self.zone_num = None
+        self.zone_let = None
+        self.rmse_dict = None
+        self.mae_dict = None
+        self.Geo_true = None
+        self.Geo_pred = None
 
-    def _initialize_projector(self, frame:NDArray, world_pts:NDArray):
-        img_pts = self._request_points(frame, 4, "world_pts")
+    def _initialize_projector(self, frame:NDArray, world_pts:NDArray, img_pts:NDArray=None):
+        if img_pts is None:
+            img_pts = self._request_points(frame, 4, "world_pts")
+
         dst_pts = self._latlon_to_utm(world_pts)
         src_pts = self._shape_validation(img_pts)
 
@@ -45,6 +52,7 @@ class InversePerspectiveMapper:
         flat = pts.reshape(-1, 2)
 
         lat, lon = utm.to_latlon(flat[:, 0], flat[:, 1], zone_number=self.zone_num, zone_letter=self.zone_let)
+        print([lat, lon])
 
         return np.array([lat, lon], dtype=np.float32).reshape(pts.shape)  
 
@@ -96,25 +104,58 @@ class InversePerspectiveMapper:
             
         return pts
     
-    def _evaluate_projector(self, test_src_pts:NDArray, test_dst_pts:NDArray):
-        rmse = []
-
-        pts = self.projector.project(test_src_pts)
-
-        logger.debug(f"WorldProjector geo-referenced the provided validation points as:\n{pts}")
-
-        Geo1 = test_dst_pts[0]
-        Geo2 = pts[0]
-
-        rmse = np.sqrt(
-            np.mean(
-                [(x2 - x1)**2 + (y2-y1)**2 for (x1, y1), (x2, y2) in zip(Geo1, Geo2)]
-            )
-        )
-
-        logger.info(f"Homography Matrix achieves a Root Mean Squared Error score of {rmse:.2f}.")
-        return rmse
+    def evaluate_projector(self, frame:NDArray, world_val_pts:NDArray, img_val_pts:NDArray=None):
+        results_dict = {}
+        if img_val_pts is None:
+            img_val_pts = self._request_points(frame, world_val_pts.shape[1], "val_pts")
     
+        Geo_true = self._latlon_to_utm(world_val_pts)
+
+        Geo_pred = self.projector.project(img_val_pts)
+
+        logger.debug(f"WorldProjector geo-referenced the provided validation points as:\n{self._utm_to_latlon(Geo_pred)}")
+
+        rmse_str, rmse_dict = RMSE(Geo_true[0], Geo_pred[0])
+        mae_str, mae_dict = MAE(Geo_true[0], Geo_pred[0])
+
+        logger.info(f"""\n
+\033[01m\033[04mInverse Persepective Mapping metrics\033[0m:
+{rmse_str}
+{mae_str}
+""")     
+        results_dict["rmse"] = rmse_dict
+        results_dict["mae"] = mae_dict
+        Geo_pred = self._utm_to_latlon(Geo_pred)   
+        return Geo_pred, results_dict
+    
+    def inspect_results(self, Geo_true:NDArray, Geo_pred:NDArray, results:dict[dict], file_out:str):
+        rmse_dict, mae_dict = results["rmse"], results["mae"] 
+
+        true_popups = [f"Geo True Pt. {i}" for i in range(len(Geo_true))]
+        self.add_layer(Geo_true[0], true_popups, "Ground Truth")
+
+        pred_popups = [
+            f"""
+Geo Pred. Pt. {i}\n
+East Error^2: {inner_rmse["East Error^2"]}
+East |Error|: {inner_mae["North |Error|"]}\n
+North Error^2: {inner_rmse["North Error^2"]}
+North |Error|: {inner_mae["North |Error|"]}\n
+Total Sqrd. Error: {inner_rmse["Total Error"]}
+Total Abs. Error: {inner_mae["Total Error"]}
+""" for i, (inner_rmse, inner_mae) in enumerate(zip(rmse_dict.values(), mae_dict.values()))
+        ]
+
+        self.add_layer(Geo_pred[0], pred_popups, "Projection")
+        
+        return self.save_map(file_out, view=True)
+    
+    def add_layer(self, coords:list | NDArray, popups:list[str]=None, name:str=None):
+        self.map_maker.generate_overlay(coords, popups, name)
+
+    def save_map(self, file_out:str, view:bool=True):
+        return self.map_maker.save_map(file_out, view)
+
     def map_persepective(self, pts:NDArray):
         pts = self.projector.project(pts, "forward")
         return self._utm_to_latlon(pts)

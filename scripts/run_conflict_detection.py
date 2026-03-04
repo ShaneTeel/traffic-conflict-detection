@@ -2,7 +2,7 @@ import numpy as np
 
 from conflict_detection.detect import DetectionSystem
 from conflict_detection.visualization import *
-from conflict_detection.utils import *
+from conflict_detection.utils import get_logger, setup_logging
 
 logger = get_logger(__name__)
 
@@ -17,14 +17,10 @@ def main(file_in:str, file_out:str, model_path:str, dst_pts:np.ndarray):
  
     system = DetectionSystem(file_in, dst_pts, model_path=model_path)
     studio = StudioManager(file_out)
-    carto = MapMaker(dst_pts)
-
-    system.monitor_traffic(file_out=file_out)
-    coords, popups = system.geocode_conflicts()
     
-    carto.generate_overlay(coords, popups, "Min TTC Overlay")
-    carto.add_layer_control()
-    carto.m.show_in_browser()
+    conflicts = system.monitor_traffic(file_out=file_out)
+    
+    system.inspect_conflicts(conflicts)
 
     studio.play_video()
     

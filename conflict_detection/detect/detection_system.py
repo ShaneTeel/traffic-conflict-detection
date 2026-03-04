@@ -7,7 +7,7 @@ import collections
 
 from conflict_detection.visualization import StudioManager
 from conflict_detection.geometry import *
-from conflict_detection.objects import ObjectDetector, ObjectTracker
+from conflict_detection.multi_object_tracking import ObjectDetector, ObjectTracker
 from conflict_detection.trajectory import TrajManager
 from .time_to_collision import TimeToCollision
 from conflict_detection.utils import get_logger
@@ -24,7 +24,7 @@ class DetectionSystem:
         atexit.register(self._clean_up)
 
         self.studio_in = StudioManager(file_in)
-        self.fps, frame = self.studio_in._extract_init_data()
+        self.fps, frame = self.studio_in._extract_init_data(self.temp_file)
         self.temp_studio = None
 
         self.detector = ObjectDetector(model_path=model_path, confidence=model_conf)
@@ -50,6 +50,8 @@ class DetectionSystem:
 
         self.conflicts = self._detect_conflicts(analyzers=analyzers)
         self._annotate_conflicts(conflicts=self.conflicts, file_in=self.temp_file, file_out=file_out)
+
+        return self.conflicts
 
     def _multi_object_tracking_with_traj_collection(self):
         frames_count = 0
@@ -124,13 +126,13 @@ class DetectionSystem:
 
             self.temp_studio.write_frame(frame)
 
-    def geocode_conflicts(self):
-        if self.conflicts is None:
+    def inspect_conflicts(self, conflicts:dict[dict]):
+        if conflicts is None:
             raise RuntimeError("Error. User must call `_detect_conflicts()` first before annotating")   
            
         coords = []
         popups = []
-        for k, c in self.conflicts.items():
+        for k, c in conflicts.items():
             pts_arr = np.array(c["collision_point"], np.float32)
             coords.append(self.mapper.map_persepective(pts_arr))
             popup_info = f"""
@@ -141,8 +143,9 @@ class DetectionSystem:
 """
             popups.append(popup_info)
 
-        return coords, popups
-    
+        self.mapper.add_layer(coords, popups, name="Min TTC Points")
+        return self.mapper.show_map()
+
     def _clean_up(self):
 
         if self.studio_in is not None:

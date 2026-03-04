@@ -1,14 +1,17 @@
-import numpy as np
 import folium
+import webbrowser
+import os
+
+from numpy.typing import NDArray
 
 class MapMaker:
 
-    def __init__(self, world_pts:np.ndarray):
+    def __init__(self, pts:NDArray):
 
-        coords = world_pts[0]
+        coords = pts[0]
         cx, cy = coords[:, 0].mean(), coords[:, 1].mean()
 
-        self.m = folium.Map((cx, cy), zoom_start=5, width="100%")
+        self.m = folium.Map((cx, cy), zoom_start=12, width="100%")
 
         folium.TileLayer(
             tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -20,7 +23,7 @@ class MapMaker:
 
         self.feature_groups = []
     
-    def generate_overlay(self, coords:list, popup_info:list[str], name:str):
+    def generate_overlay(self, coords:list, popup_info:list[str]=None, name:str="Projection Overaly"):
         '''
         Description
         -----------
@@ -33,10 +36,10 @@ class MapMaker:
             A list of lists containing the lat and lon for each point to be added 
             to the feature group and, subseqeuntly, to the base-map
         
-        popup_info : list[str]
+        popup_info : list[str], default=None
             List of str objects that will serve as the pop-up info for the icons drawn. 
 
-        name : str
+        name : str, default="Projection Overlay"
             Name of feature group to be added to base-map. 
         
         Returns
@@ -45,14 +48,21 @@ class MapMaker:
             The map object with the feature group layer added. 
         '''
         fg = folium.FeatureGroup(name)
+        if popup_info is not None:
+            for pt, popup in zip(coords, popup_info):
 
-        for pt, popup in zip(coords, popup_info):
+                folium.CircleMarker(
+                    pt,
+                    popup=popup,
+                    radius=1,
+                    ).add_to(fg)
 
-            folium.CircleMarker(
-                pt,
-                popup=popup,
-                radius=1
-                ).add_to(fg)
+        else:
+            for pt in coords:
+                folium.CircleMarker(
+                    pt,
+                    radius=1
+                    ).add_to(fg)
 
         fg.add_to(self.m)
 
@@ -65,3 +75,12 @@ class MapMaker:
                 del self.m._children[key]
     
         folium.LayerControl(collapsed=False).add_to(self.m)
+
+    def save_map(self, file_out:str, view:bool=True):
+        self.add_layer_control()
+        self.m.save(file_out)
+
+        if view:
+            webbrowser.open_new_tab(f"file://{os.path.realpath(file_out)}")
+
+        return self.m
