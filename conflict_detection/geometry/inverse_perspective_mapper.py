@@ -17,6 +17,7 @@ class InversePerspectiveMapper:
     def __init__(self, frame:NDArray, world_pts:NDArray, img_pts:NDArray=None):
 
         self.projector = self._initialize_projector(frame, world_pts, img_pts)
+        self.control_pts = world_pts
         self.map_maker = MapMaker(world_pts)
         self.zone_num = None
         self.zone_let = None
@@ -51,7 +52,9 @@ class InversePerspectiveMapper:
 
         flat = pts.reshape(-1, 2)
 
-        lat, lon = utm.to_latlon(flat[:, 0], flat[:, 1], zone_number=self.zone_num, zone_letter=self.zone_let)
+        print(f"Flat: {flat}")
+
+        lat, lon = utm.to_latlon(easting=flat[:, 0], northing=flat[:, 1], zone_number=self.zone_num, zone_letter=self.zone_let)
 
         return np.stack([lat, lon], axis=1, dtype=np.float32).reshape(pts.shape)  
 
@@ -63,6 +66,7 @@ class InversePerspectiveMapper:
         for i, (lat, lon) in enumerate(flat):
 
             e, n, zn, zl = utm.from_latlon(lat, lon)
+            print(f"Zone Letter: {zl}")
             if i == 0:
                 self.zone_num = zn
                 self.zone_let = zl
@@ -145,11 +149,13 @@ class InversePerspectiveMapper:
 """ for i, (inner_rmse, inner_mae) in enumerate(zip(rmse_dict.values(), mae_dict.values()))
         ]
 
-        self.add_layer(Geo_pred[0], pred_popups, color="green", name="Projection")
+        self.add_layer(Geo_pred[0], pred_popups, color="red", name="Projection")
+
+        self.add_layer(self.control_pts[0], [f"Ground Control Pt. # {i}" for i in range(4)], color="yellow", name="Ground Control Points")
         
         return self.save_map(file_out, view=True)
     
-    def add_layer(self, coords:list | NDArray, popups:list[str]=None, color:Literal["blue", "green"]="blue", name:str=None):
+    def add_layer(self, coords:list | NDArray, popups:list[str]=None, color:Literal["red", "blue", "yellow"]="red", name:str=None):
         self.map_maker.generate_overlay(coords, popups, color, name)
 
     def save_map(self, file_out:str, view:bool=True):

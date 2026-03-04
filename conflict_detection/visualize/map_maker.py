@@ -60,7 +60,7 @@ class MapMaker:
         self.feature_groups.append(name)
         return self.m
     
-    def generate_overlay(self, coords:list, popup_info:list[str]=None, color:Literal["blue", "red", "green"]="red", name:str="Projection Overaly"):
+    def generate_overlay(self, coords:list, popup_info:list[str]=None, color:Literal["red", "blue", "yellow"]="red", name:str="Projection Overaly"):
         '''
         Description
         -----------
@@ -91,9 +91,10 @@ class MapMaker:
             folium.CircleMarker(
                 location=pt,
                 popup=popup,
-                radius=2,
+                radius=3,
                 color=color,
-                fill_color=color
+                fill_color=color,
+                fill=True,
                 ).add_to(fg)
 
         fg.add_to(self.m)

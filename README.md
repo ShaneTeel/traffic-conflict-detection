@@ -1,10 +1,6 @@
 # Traffic-Conflict Detection
 
-A conflict detection system designed to explore automated methods for achieving Vision Zero philosophy. Specifically,:
-- Assessing and visualizing the temporal quality of an individual's raw GPS fixes 
-- Transforming raw GPS fixes into discrete, semantically-labeled locations
-- Behaviorally profiling an individual's relationship with the semantically-labeled locations
-- Modeling an individual's movement pattern to determine both the likelihood of a transition and the confidence in that assessment
+
 
 ## Table-of-Contents
 - [Key Features](#key-features)
@@ -16,33 +12,15 @@ A conflict detection system designed to explore automated methods for achieving 
 - [License](#license)
 
 
-### Example Output (Modified Video) 
-![Video](./media/integrity.png)
+### Output (Modified Video) 
+![Multi-Object Tracking](./media/readme/multi-object-tracking.gif)
 
 ### Example Output (Heatmap)
-![Heatmap](./media/tax-global-view.png)
+![Conflict Heatmap](./media/readme/conflict-heatmap.png)
 
 [Return to TOC](#table-of-contents)
 
 ## Key Features
-
-### Multi-Object Tracking & Trajectory Collection
-- Combined YOLOv8 with Supervision for persistent object tracking across frames
-- Actively collects object trajectory data while processing video feed
-
-### Location Mining
-- Custom Stay-Point detection
-- Stay-Point clustering with DBSCAN 
-
-### Location Profiling
-- Configurable Anchor Point (Home / Work) identification
-- Behavioral profiling based on temporal patterns
-- Characterization of a user's spatial focus (sprawl) while at a location
-
-### Location Transition Mapping
-- First-order Markov Chain with Next-Location Prediction (see performance below)
-- Evaluation metrics including baseline comparison and improvement calculation
-
 ### Inverse Persepective Mapping metrics:
 
 **Root Mean Squared Error**: 1.47 meters
@@ -61,8 +39,10 @@ A conflict detection system designed to explore automated methods for achieving 
 |1       | 1.31             | 1.00              | 2.31              |
 |2       | 1.62             | 1.00              | 3.62              |
 
-![Map](https://ShaneTeel.github.io/traffic-conflict-detection/media/out/H-matrix-eval.html)
-
+![H-Matrix Eval](./media/readme/H-matrix-eval.png)
+- Yellow == Ground Control Points
+- Green == Ground Truth (Validation Points)
+- Red == Prediction
 
 [Return to TOC](#table-of-contents)
 
