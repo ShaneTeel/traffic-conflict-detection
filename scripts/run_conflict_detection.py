@@ -17,14 +17,11 @@ setup_logging(
 
 def main(file_in:str, file_out:str, model_path:str, dst_pts:NDArray, src_pts:NDArray):
  
-    system = DetectionSystem(file_in, dst_pts, src_pts, model_path=model_path)
-    studio = StudioManager(file_out)
+    system = DetectionSystem(file_in, file_out, dst_pts, src_pts, model_path=model_path)
     
-    conflicts = system.monitor_traffic(file_out=file_out)
+    conflicts = system.monitor_traffic()
     
     system.inspect_conflicts(conflicts, file_out="./media/out/TTC-conflicts-heatmap.html")
-
-    studio.play_video()
     
 if __name__ == "__main__":
     file_in = "./media/in/US_17_N_10th_Ave_20260107.mp4"

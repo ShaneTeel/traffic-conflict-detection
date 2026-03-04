@@ -219,8 +219,8 @@ class TrajAnalyzer:
             return []
 
         bbox_pts = np.array([d["bbox"] for d in deduped])
-        cx = bbox_pts[:, [0, 2]].mean(axis=1)
-        cy = bbox_pts[:, [1, 3]].mean(axis=1)
+        bx = bbox_pts[:, [0, 2]].mean(axis=1)
+        by = bbox_pts[:, 3]
         w = bbox_pts[:, 2] - bbox_pts[:, 0]
         h = bbox_pts[:, 3] - bbox_pts[:, 1]
 
@@ -228,7 +228,7 @@ class TrajAnalyzer:
         for i, pos in enumerate(deduped):
             
             processed.append({
-                "center": (float(cx[i]), float(cy[i])),
+                "center": (float(bx[i]), float(by[i])),
                 "size": (float(w[i]), float(h[i])),
                 "timestamp": pos["timestamp"],
                 "frame_idx": pos["frame_idx"],

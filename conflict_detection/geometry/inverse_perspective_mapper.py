@@ -19,8 +19,6 @@ class InversePerspectiveMapper:
         self.projector = self._initialize_projector(frame, world_pts, img_pts)
         self.control_pts = world_pts
         self.map_maker = MapMaker(world_pts)
-        self.zone_num = None
-        self.zone_let = None
         self.rmse_dict = None
         self.mae_dict = None
         self.Geo_true = None
@@ -52,8 +50,6 @@ class InversePerspectiveMapper:
 
         flat = pts.reshape(-1, 2)
 
-        print(f"Flat: {flat}")
-
         lat, lon = utm.to_latlon(easting=flat[:, 0], northing=flat[:, 1], zone_number=self.zone_num, zone_letter=self.zone_let)
 
         return np.stack([lat, lon], axis=1, dtype=np.float32).reshape(pts.shape)  
@@ -66,7 +62,6 @@ class InversePerspectiveMapper:
         for i, (lat, lon) in enumerate(flat):
 
             e, n, zn, zl = utm.from_latlon(lat, lon)
-            print(f"Zone Letter: {zl}")
             if i == 0:
                 self.zone_num = zn
                 self.zone_let = zl

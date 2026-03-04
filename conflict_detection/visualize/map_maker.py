@@ -49,10 +49,7 @@ class MapMaker:
         heatmap_fg = folium.FeatureGroup(name)
 
         HeatMap(
-            coords, 
-            min_opacity=1.0, 
-            blur=0, 
-            radius=10
+            coords
             ).add_to(heatmap_fg)
 
         heatmap_fg.add_to(self.m)

@@ -73,8 +73,6 @@ class WorldProjector:
 
         if pts.ndim < 3:
             pts = pts.reshape(1, -1, 2)
-
-        print(f"Perspective Transform: {pts}")
         
         m = self.H if direction == "forward" else self.H_I
 
