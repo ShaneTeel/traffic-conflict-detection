@@ -145,7 +145,6 @@ class DetectionSystem:
             popups.append(popup_info)
 
         # self.mapper.add_layer(coords, popups, name="Min TTC Points")
-``
         print(coords)
         return self.mapper.generate_heatmap(coords[0], file_out)
          
