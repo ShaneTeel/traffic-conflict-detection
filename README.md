@@ -61,8 +61,7 @@ A conflict detection system designed to explore automated methods for achieving 
 |1       | 1.31             | 1.00              | 2.31              |
 |2       | 1.62             | 1.00              | 3.62              |
 
-![Map](https://ShaneTeel.github.io/traffic-conflict-detection/H-matrix-eval.html)
-
+<iframe src="./media/out/H-matrix-eval.html" height="500" width="100%"></iframe>
 
 [Return to TOC](#table-of-contents)
 
