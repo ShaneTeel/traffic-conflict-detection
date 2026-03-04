@@ -1,11 +1,12 @@
 import numpy as np
-import cv2
 import os
 import tempfile
 import atexit
 import collections
 
-from conflict_detection.visualization import StudioManager
+from numpy.typing import NDArray
+
+from conflict_detection.visualize import StudioManager
 from conflict_detection.geometry import *
 from conflict_detection.multi_object_tracking import ObjectDetector, ObjectTracker
 from conflict_detection.trajectory import TrajManager
@@ -18,7 +19,7 @@ class DetectionSystem:
 
     _OBJECT_INFO = collections.namedtuple("ObjectInfo", ["coords", "label", "lifecycle"])
 
-    def __init__(self, file_in:str, world_pts:np.ndarray, model_path:str="./models/yolov8n.pt", model_conf:float=0.5, activation_thresh:float=0.25, lost_buffer:int=30, ttc_thresh:float=1.5, min_dist:float=0.5, use_wall_time:bool=False):
+    def __init__(self, file_in:str, world_pts:NDArray, img_pts:NDArray, model_path:str="./models/yolov8n.pt", model_conf:float=0.5, activation_thresh:float=0.25, lost_buffer:int=30, ttc_thresh:float=1.5, min_dist:float=0.5, use_wall_time:bool=False):
 
         self.temp_file = self._create_temp_file()
         atexit.register(self._clean_up)
@@ -29,7 +30,7 @@ class DetectionSystem:
 
         self.detector = ObjectDetector(model_path=model_path, confidence=model_conf)
         self.tracker = ObjectTracker(fps=self.fps, activation_thresh=activation_thresh, lost_buffer=lost_buffer)
-        self.mapper = IPM(frame, world_pts)
+        self.mapper = IPM(frame, world_pts, img_pts)
         self.traj = TrajManager(self.fps, use_wall_time=False)
         self.ttc = TimeToCollision(ttc_thresh, min_dist)
         self.conflicts = None
@@ -59,7 +60,7 @@ class DetectionSystem:
         
         while True:
             ret, frame = self.studio_in.return_frame()
-            if not ret:
+            if not ret or frames_count > 400:
                 logger.info(f"Finished processing {frames_count} frames.")
                 if self.studio_in.writer_check():
                     logger.info(f"Output saved to: {self.temp_file}")
@@ -126,7 +127,7 @@ class DetectionSystem:
 
             self.temp_studio.write_frame(frame)
 
-    def inspect_conflicts(self, conflicts:dict[dict]):
+    def inspect_conflicts(self, conflicts:dict[dict], file_out:str):
         if conflicts is None:
             raise RuntimeError("Error. User must call `_detect_conflicts()` first before annotating")   
            
@@ -143,9 +144,11 @@ class DetectionSystem:
 """
             popups.append(popup_info)
 
-        self.mapper.add_layer(coords, popups, name="Min TTC Points")
-        return self.mapper.show_map()
-
+        # self.mapper.add_layer(coords, popups, name="Min TTC Points")
+``
+        print(coords)
+        return self.mapper.generate_heatmap(coords[0], file_out)
+         
     def _clean_up(self):
 
         if self.studio_in is not None:

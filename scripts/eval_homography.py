@@ -1,7 +1,7 @@
 import numpy as np
 
 from conflict_detection.geometry import IPM
-from conflict_detection.visualization import StudioManager
+from conflict_detection.visualize import StudioManager
 from conflict_detection.utils import get_logger, setup_logging
 
 logger = get_logger(__name__)

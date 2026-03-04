@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from .click_points import ClickPoints
 from .world_projector import WorldProjector
 
-from conflict_detection.visualization import MapMaker
+from conflict_detection.visualize import MapMaker
 from conflict_detection.utils import get_logger, MAE, RMSE
 
 logger = get_logger(__name__)
@@ -52,9 +52,8 @@ class InversePerspectiveMapper:
         flat = pts.reshape(-1, 2)
 
         lat, lon = utm.to_latlon(flat[:, 0], flat[:, 1], zone_number=self.zone_num, zone_letter=self.zone_let)
-        print([lat, lon])
 
-        return np.array([lat, lon], dtype=np.float32).reshape(pts.shape)  
+        return np.stack([lat, lon], axis=1, dtype=np.float32).reshape(pts.shape)  
 
     def _latlon_to_utm(self, dst_pts:NDArray):
 
@@ -131,27 +130,27 @@ class InversePerspectiveMapper:
     def inspect_results(self, Geo_true:NDArray, Geo_pred:NDArray, results:dict[dict], file_out:str):
         rmse_dict, mae_dict = results["rmse"], results["mae"] 
 
-        true_popups = [f"Geo True Pt. {i}" for i in range(len(Geo_true))]
-        self.add_layer(Geo_true[0], true_popups, "Ground Truth")
+        true_popups = [f"Geo True Pt. {i}" for i in range(len(Geo_true[0]))]
+        self.add_layer(Geo_true[0], true_popups, color="blue", name="Ground Truth")
 
         pred_popups = [
             f"""
-Geo Pred. Pt. {i}\n
-East Error^2: {inner_rmse["East Error^2"]}
-East |Error|: {inner_mae["North |Error|"]}\n
-North Error^2: {inner_rmse["North Error^2"]}
-North |Error|: {inner_mae["North |Error|"]}\n
-Total Sqrd. Error: {inner_rmse["Total Error"]}
-Total Abs. Error: {inner_mae["Total Error"]}
+<b><u>Geo Pred. Pt. {i}</b></u><br>
+<b>East Error^2</b>: {inner_rmse["East Error^2"]:.2f}<br>
+<b>East |Error|</b>: {inner_mae["North |Error|"]:.2f}<br>
+<b>North Error^2</b>: {inner_rmse["North Error^2"]:.2f}<br>
+<b>North |Error|</b>: {inner_mae["North |Error|"]:.2f}<br>
+<b>Total Sqrd. Error</b>: {inner_rmse["Total Error"]:.2f}<br>
+<b>Total Abs. Error</b>: {inner_mae["Total Error"]:.2f}
 """ for i, (inner_rmse, inner_mae) in enumerate(zip(rmse_dict.values(), mae_dict.values()))
         ]
 
-        self.add_layer(Geo_pred[0], pred_popups, "Projection")
+        self.add_layer(Geo_pred[0], pred_popups, color="green", name="Projection")
         
         return self.save_map(file_out, view=True)
     
-    def add_layer(self, coords:list | NDArray, popups:list[str]=None, name:str=None):
-        self.map_maker.generate_overlay(coords, popups, name)
+    def add_layer(self, coords:list | NDArray, popups:list[str]=None, color:Literal["blue", "green"]="blue", name:str=None):
+        self.map_maker.generate_overlay(coords, popups, color, name)
 
     def save_map(self, file_out:str, view:bool=True):
         return self.map_maker.save_map(file_out, view)
@@ -159,3 +158,7 @@ Total Abs. Error: {inner_mae["Total Error"]}
     def map_persepective(self, pts:NDArray):
         pts = self.projector.project(pts, "forward")
         return self._utm_to_latlon(pts)
+    
+    def generate_heatmap(self, coords:NDArray, file_out:str, name:str="TTC Conflicts"):
+        self.map_maker.generate_heatmap(coords, name)
+        return self.save_map(file_out, view=True)

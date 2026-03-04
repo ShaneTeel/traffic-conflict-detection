@@ -1,6 +1,8 @@
 import numpy as np
 from ultralytics import YOLO
 
+from numpy.typing import NDArray
+
 from conflict_detection.utils import get_logger
 
 logger = get_logger(__name__)
@@ -14,7 +16,7 @@ class ObjectDetector:
 
         logger.debug("Initialied detector.")
 
-    def detect(self, frame:np.ndarray):
+    def detect(self, frame:NDArray):
         results = self.model(frame, conf=self.confidence, verbose=False)
 
         results_lst = []
