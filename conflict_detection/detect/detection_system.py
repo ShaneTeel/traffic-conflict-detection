@@ -133,8 +133,10 @@ class DetectionSystem:
            
         coords = []
         popups = []
+        print(conflicts)
         for k, c in conflicts.items():
             pts_arr = np.array(c["collision_point"], np.float32)
+            print(pts_arr)
             coords.append(self.mapper.map_persepective(pts_arr))
             popup_info = f"""
 <b><u>Object Pair</b></u>: {k}<br>
