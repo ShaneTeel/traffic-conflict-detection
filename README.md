@@ -1,8 +1,9 @@
 # Traffic-Conflict Detection
 
-
+Computer vision system that detects, catologues, and geolocates vehicle conflict events from traffic camera footage by transforming pixel-space conflict coordinates into real-world geographic coordinates.
 
 ## Table-of-Contents
+- [Example Outputs](#example-outputs)
 - [Key Features](#key-features)
 - [Quick Start](#quick-start)
 - [Data Source](#data-source)
@@ -11,16 +12,26 @@
 - [Citation](#citation)
 - [License](#license)
 
-
-### Output (Modified Video) 
+## Example Outputs
+### Multi-Object Tracking 
 ![Multi-Object Tracking](./media/readme/multi-object-tracking.gif)
 
-### Example Output (Heatmap)
+### Conflict Events (Heatmap)
 ![Conflict Heatmap](./media/readme/conflict-heatmap.png)
 
-[Return to TOC](#table-of-contents)
-
 ## Key Features
+### Real-Time Trajectory Collection
+- Combines YOLOv8 with Supervision for persistent object tracking across frames
+- Collects tracked object trajectory data and formats for trajectory analysis
+
+### Time-to-Collision Calculation
+- Computes instant position, speed, and velocity for each tracked object
+- Performs "sweep" time-to-collision for every possible timestamp an object is in frame to determine vulnerability to conflict
+
+### Inverse Perspective Mapping (Image --> Real-World Projection)
+- Custom inverse perspective mapping pipeline transforms pixel-space conflict coordinates to geographic coordinates
+- Achieves an RMSE score of 1.47 meters and a MAE score of 1.81 meteres (see below)
+
 ### Inverse Persepective Mapping metrics:
 
 **Root Mean Squared Error**: 1.47 meters
@@ -54,14 +65,14 @@ git clone https://github.com/ShaneTeel/traffic-conflict-detection.git
 cd traffic-conflict-detection
 ```
 
-**For project dependencies**
-```bash
-python -m pip install -r requirements.txt
-```
-
 **For CPU-only**
 ```bash
 python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+```
+
+**For project dependencies**
+```bash
+python -m pip install -r requirements.txt
 ```
 
 ### Example Usage (Joe White Blvd., Myrtle Beach, SC)
@@ -169,7 +180,6 @@ flowchart LR;
 [Return to TOC](#table-of-contents)
 
 ## Citation
-
 If you use this package or software, please cite it as follows:
 
 ```bibtex
@@ -184,7 +194,6 @@ If you use this package or software, please cite it as follows:
 [Return to TOC](#table-of-contents)
 
 ## License
-
 This project is licensed under an All Rights Reserved [License](./LICENSE)
 
 **Copyright (c) 2026 Shane Teel**

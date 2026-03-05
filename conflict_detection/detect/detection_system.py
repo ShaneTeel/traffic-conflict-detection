@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 
 class DetectionSystem:
 
-    def __init__(self, file_in:str, file_out:str, world_pts:NDArray, img_pts:NDArray, model_path:str="./models/yolov8m.pt", model_conf:float=0.6, activation_thresh:float=0.25, lost_buffer:int=30, ttc_thresh:float=1.5, min_dist:float=0.5, use_wall_time:bool=False):
+    def __init__(self, file_in:str, file_out:str, world_pts:NDArray, img_pts:NDArray, model_path:str="./models/yolov8m.pt", model_conf:float=0.5, activation_thresh:float=0.25, lost_buffer:int=30, ttc_thresh:float=1.5, min_dist:float=0.5, use_wall_time:bool=False):
 
         self.studio_in = StudioManager(file_in)
         self.file_out = file_out

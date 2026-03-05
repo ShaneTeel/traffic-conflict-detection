@@ -60,4 +60,4 @@ class TrajCollector:
 
     def _runtime_check(self):
         if not self.trajectories:
-            raise RuntimeError("No trajectory data collected. Coll .collect() first.")
+            raise RuntimeError("No trajectory data collected. Call `.collect()` first.")

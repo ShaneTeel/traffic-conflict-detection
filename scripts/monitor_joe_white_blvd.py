@@ -1,6 +1,4 @@
 from numpy.typing import NDArray
-import pickle
-import os
 
 from conflict_detection.detect import DetectionSystem
 from conflict_detection.visualize import *
@@ -18,17 +16,9 @@ setup_logging(
 )
 
 def main(file_in:str, file_out:str, model_path:str, dst_pts:NDArray, src_pts:NDArray):
- 
-    # if os.path.exists("./scripts/data.pkl"):
-    #     with open('./scripts/data.pkl', 'rb') as file:    
-    #         conflicts = pickle.load("./scripts/data.pkl")
-        
-    # else:
+    
     system = DetectionSystem(file_in, file_out, dst_pts, src_pts, model_path=model_path)
     conflicts = system.monitor_traffic()
-
-        # with open("./scripts/data.pkl", "wb") as file:
-        #     pickle.dump(conflicts, file)
     
     system.inspect_conflicts(conflicts, file_out="./media/out/TTC-conflicts-heatmap.html")
     
@@ -36,6 +26,6 @@ if __name__ == "__main__":
     file_in = "./media/in/US_17_N_10th_Ave_20260107.mp4"
     file_out = "./media/out/US_17_N_10th_Ave_20260107-processed.mp4"
 
-    model_path = "./models/yolov8m.pt"
+    model_path = "./models/yolov8x.pt"
 
     main(file_in, file_out, model_path, DST_PTS, SRC_PTS)

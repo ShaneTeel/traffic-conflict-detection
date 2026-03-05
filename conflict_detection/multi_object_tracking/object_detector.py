@@ -7,7 +7,7 @@ logger = get_logger(__name__)
 
 class ObjectDetector:
 
-    def __init__(self, model_path:str="yolov8m.pt", confidence:float=0.6):
+    def __init__(self, model_path:str="yolov8m.pt", confidence:float=0.5):
 
         self.model = YOLO(model=model_path, verbose=False)
         self.confidence = confidence
