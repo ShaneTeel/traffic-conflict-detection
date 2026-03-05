@@ -13,10 +13,10 @@ Computer vision system that detects, catalogues, and geolocates vehicle conflict
 - [License](#license)
 
 ## Example Outputs
-### Multi-Object Tracking 
+### Multi-Object Tracking Output
 ![Multi-Object Tracking](./media/readme/multi-object-tracking.gif)
 
-### Conflict Events (Heatmap)
+### Conflict Detection / Inverse Perspective Mapping Output (Heatmap)
 ![Conflict Heatmap](./media/readme/conflict-heatmap.png)
 
 ## Key Features
