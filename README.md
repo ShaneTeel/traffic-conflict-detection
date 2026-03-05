@@ -1,6 +1,6 @@
 # Traffic-Conflict Detection
 
-Computer vision system that detects, catologues, and geolocates vehicle conflict events from traffic camera footage by transforming pixel-space conflict coordinates into real-world geographic coordinates.
+Computer vision system that detects, catalogues, and geolocates vehicle conflict events from traffic camera footage by transforming pixel-space conflict coordinates into real-world geographic coordinates.
 
 ## Table-of-Contents
 - [Example Outputs](#example-outputs)
@@ -30,7 +30,7 @@ Computer vision system that detects, catologues, and geolocates vehicle conflict
 
 ### Inverse Perspective Mapping (Image --> Real-World Projection)
 - Custom inverse perspective mapping pipeline transforms pixel-space conflict coordinates to geographic coordinates
-- Achieves an RMSE score of 1.47 meters and a MAE score of 1.81 meteres (see below)
+- Achieves an RMSE score of 1.47 meters and a MAE score of 1.81 meters (see below)
 
 ### Inverse Persepective Mapping metrics:
 

@@ -157,8 +157,7 @@ class InversePerspectiveMapper:
         return self.map_maker.save_map(file_out, view)
 
     def map_perspective(self, pts:NDArray | tuple):
-        if not isinstance(pts, NDArray):
-            pts = np.array([pts], dtype=np.float32)
+        pts = np.array([pts], dtype=np.float32).reshape(1, -1, 2)
         pts = self.projector.project(pts, "forward")
         return self._utm_to_latlon(pts)
     
