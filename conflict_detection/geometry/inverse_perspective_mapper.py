@@ -150,13 +150,15 @@ class InversePerspectiveMapper:
         
         return self.save_map(file_out, view=True)
     
-    def add_layer(self, coords:list | NDArray, popups:list[str]=None, color:Literal["red", "blue", "yellow"]="red", name:str=None):
+    def add_layer(self, coords:list | NDArray, popups:list[str], color:Literal["red", "blue", "yellow"], name:str=None):
         self.map_maker.generate_overlay(coords, popups, color, name)
 
     def save_map(self, file_out:str, view:bool=True):
         return self.map_maker.save_map(file_out, view)
 
-    def map_persepective(self, pts:NDArray):
+    def map_perspective(self, pts:NDArray | tuple):
+        if not isinstance(pts, NDArray):
+            pts = np.array([pts], dtype=np.float32)
         pts = self.projector.project(pts, "forward")
         return self._utm_to_latlon(pts)
     

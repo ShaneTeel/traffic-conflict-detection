@@ -7,6 +7,8 @@ logger = get_logger(__name__)
 
 class ObjectDetector:
 
+    _VIC_CLASSES = [2, 3, 5, 7]
+
     def __init__(self, model_path:str="yolov8m.pt", confidence:float=0.5):
 
         self.model = YOLO(model=model_path, verbose=False)
@@ -23,9 +25,12 @@ class ObjectDetector:
             logger.debug("No objects detected in frame.")
         else:
             for box in results[0].boxes:
+                class_id = int(box.cls[0].item())
+                if class_id not in self._VIC_CLASSES:
+                    continue
+                
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 conf = box.conf[0].item()
-                class_id = box.cls[0].item()
                 class_name = results[0].names[class_id]
                 box_dict = {
                     "bbox": [x1, y1, x2, y2],

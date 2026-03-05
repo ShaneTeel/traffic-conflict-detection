@@ -16,6 +16,7 @@ class DetectionSystem:
         self.studio_in = StudioManager(file_in)
         self.file_out = file_out
         self.fps, frame = self.studio_in._extract_init_data(file_out)
+        self.studio_in.set_frame_idx(0)
         self.temp_studio = None
 
         self.detector = ObjectDetector(model_path=model_path, confidence=model_conf)
@@ -37,7 +38,6 @@ class DetectionSystem:
 
     def _multi_object_tracking_with_traj_collection(self):
         frames_count = 0
-        self.studio_in.set_frame_idx(0)
         
         while True:
             ret, frame = self.studio_in.return_frame()
@@ -73,7 +73,7 @@ class DetectionSystem:
         popups = []
         coords = []
         for k, c in conflicts.items():
-            coords.append(self.mapper.map_persepective(c["collision_point"]))
+            coords.append(self.mapper.map_perspective(c["collision_point"]))
             popups.append(f"""
 <b><u>Object Pair</b></u>: {k}<br>
 <b><u>Time-to-Collision</b></u>: {c["min_ttc"]:.2f}<br>

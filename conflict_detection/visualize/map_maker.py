@@ -58,7 +58,7 @@ class MapMaker:
         self.feature_groups.append(name)
         return self.m
     
-    def generate_overlay(self, coords:list, popup_info:list[str]=None, color:Literal["red", "blue", "yellow"]="red", name:str="Projection Overaly"):
+    def generate_overlay(self, coords:list, popup_info:list[str], color:Literal["red", "blue", "yellow"], name:str="Projection Overaly"):
         '''
         Description
         -----------

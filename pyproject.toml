@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Computer Vision system coupled with GIS analysis for identifying, cataloguing, and evaluating traffic conflict events."
 readme = "README.md"
 requires-python = ">=3.8"
-license = "GPL-3.0-only"
+license = {file="LICENSE"}
 authors = [
     {name = "Shane Teel"}
 ]
