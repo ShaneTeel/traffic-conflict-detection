@@ -1,5 +1,4 @@
 import numpy as np
-from typing import List
 
 from conflict_detection.trajectory import TrajAnalyzer
 from conflict_detection.utils import get_logger

@@ -1,6 +1,3 @@
-import numpy as np
-import collections
-
 from numpy.typing import NDArray
 
 from conflict_detection.visualize import StudioManager
@@ -14,9 +11,7 @@ logger = get_logger(__name__)
 
 class DetectionSystem:
 
-    _OBJECT_INFO = collections.namedtuple("ObjectInfo", ["coords", "label", "lifecycle"])
-
-    def __init__(self, file_in:str, file_out:str, world_pts:NDArray, img_pts:NDArray, model_path:str="./models/yolov8n.pt", model_conf:float=0.5, activation_thresh:float=0.25, lost_buffer:int=30, ttc_thresh:float=1.5, min_dist:float=0.5, use_wall_time:bool=False):
+    def __init__(self, file_in:str, file_out:str, world_pts:NDArray, img_pts:NDArray, model_path:str="./models/yolov8m.pt", model_conf:float=0.6, activation_thresh:float=0.25, lost_buffer:int=30, ttc_thresh:float=1.5, min_dist:float=0.5, use_wall_time:bool=False):
 
         self.studio_in = StudioManager(file_in)
         self.file_out = file_out
@@ -75,11 +70,15 @@ class DetectionSystem:
     def inspect_conflicts(self, conflicts:dict[dict], file_out:str):
         if conflicts is None:
             raise RuntimeError("Error. User must call `_detect_conflicts()` first before annotating")   
-           
+        popups = []
         coords = []
-        for c in conflicts.values():
-            pts_arr = np.array(c["collision_point"], np.float32)
-            pts_arr
-            coords.append(self.mapper.map_persepective(pts_arr))
-
-        return self.mapper.generate_heatmap(coords, file_out)
+        for k, c in conflicts.items():
+            coords.append(self.mapper.map_persepective(c["collision_point"]))
+            popups.append(f"""
+<b><u>Object Pair</b></u>: {k}<br>
+<b><u>Time-to-Collision</b></u>: {c["min_ttc"]:.2f}<br>
+<b><u>Min. Distance</b></u>: {c["min_distance"]:.2f}<br>
+<b><u>Timedelta (from start)</b></u>: {c["time_of_ttc"]:.2f}<br>
+""")
+        self.mapper.add_layer(coords, popups, "blue", "Conflict Events (Markers)")
+        return self.mapper.generate_heatmap(coords, file_out, name="Conflict Events (HeatMap)")

@@ -70,6 +70,8 @@ class WorldProjector:
         """
         if len(pts) == 0:
             return pts
+        
+        pts = np.array([pts], dtype=np.float32)
 
         if pts.ndim < 3:
             pts = pts.reshape(1, -1, 2)

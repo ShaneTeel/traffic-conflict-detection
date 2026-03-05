@@ -49,7 +49,8 @@ class MapMaker:
         heatmap_fg = folium.FeatureGroup(name)
 
         HeatMap(
-            coords
+            coords,
+            radius=15
             ).add_to(heatmap_fg)
 
         heatmap_fg.add_to(self.m)
