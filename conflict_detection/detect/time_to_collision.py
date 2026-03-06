@@ -7,9 +7,8 @@ logger = get_logger(__name__)
 
 class TimeToCollision:
 
-    def __init__(self, ttc_thresh:float=1.5, min_dist:float=0.5):
+    def __init__(self, min_dist:float=0.5):
         
-        self.ttc_thresh = ttc_thresh
         self.min_dist = min_dist
         self.conflict_history = {}
 
