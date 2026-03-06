@@ -15,7 +15,7 @@ setup_logging(
     console_output=True
 )
 
-def main(file_in:str, img_pts:NDArray, world_pts:NDArray, world_val_pts:NDArray, img_val_pts:NDArray):
+def main(file_in:str, world_pts:NDArray, world_val_pts:NDArray, img_pts:NDArray=None, img_val_pts:NDArray=None):
  
     studio = StudioManager(file_in)
 
@@ -33,4 +33,4 @@ def main(file_in:str, img_pts:NDArray, world_pts:NDArray, world_val_pts:NDArray,
 if __name__ == "__main__":
     file_in = "./media/in/US_17_N_10th_Ave_20260107.mp4"
 
-    main(file_in, SRC_PTS, DST_PTS, GEO_TRUE, GEO_TEST)
+    main(file_in, DST_PTS, GEO_TRUE, SRC_PTS, GEO_TEST)

@@ -26,6 +26,6 @@ if __name__ == "__main__":
     file_in = "./media/in/US_17_N_10th_Ave_20260107.mp4"
     file_out = "./media/out/US_17_N_10th_Ave_20260107-processed.mp4"
 
-    model_path = "./models/yolov8x.pt"
+    model_path = "./models/yolov8m.pt"
 
     main(file_in, file_out, model_path, DST_PTS, SRC_PTS)
