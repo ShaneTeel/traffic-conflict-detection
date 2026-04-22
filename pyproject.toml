@@ -21,12 +21,12 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-    "ultralytics>=8.0.0",
-    "opencv-python>=4.8.0",
-    "numpy>=1.24.0",
+    "ultralytics==8.4.41",
+    "opencv-python==4.13.0.92",
+    "numpy==2.4.4",
     "supervision==0.27.0",
-    "utm>=0.8.1",
-    "folium>=0.20.0"
+    "utm==0.8.1",
+    "folium==0.20.0"
 ]
 
 [project.urls]
